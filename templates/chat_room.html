@@ -1,0 +1,19 @@
+{% include "header.html" %}
+
+<h1>Sala de chat</h1>
+
+<script type="text/javascript" src="/static/chat.js"></script>
+<div id="chat_log"></div>
+
+<form name="chat_form" onsubmit="enviar_chat_msg(); return false">
+<div id="chat_form_div">
+<table>
+<tr>
+    <td><textarea name="text" rows="4"></textarea></td>
+    <td id="b_send"><input type="submit" value="enviar"/></td>
+</tr>
+</table>
+</div>
+</form>
+
+{% include "footer.html" %}

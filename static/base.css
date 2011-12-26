@@ -76,10 +76,11 @@ div#menu_izquierda {
     left: 0px;
     bottom: 0px;
     width: 150px;
-    padding: 5px;
+    padding: 0px;
     padding-top: 20px;
     text-align: center;
     overflow: auto;
+    border-right: 1px dotted #cccccc;
 }
 
 div#menu_izquierda a#b_crear {
@@ -103,15 +104,20 @@ div#menu_izquierda ul {
     text-align: left;
     list-style-type: none;
     padding-left: 5px;
-    padding-right: 10px;
+    padding-right: 5px;
 }
 
 div#menu_izquierda li:hover {
-    background-color: #dddddd;
+    background-color: #D8DFEA;
 }
 
 div#menu_izquierda li.seleccionado {
-    background-color: silver;
+    background-color: #4A8BF5;
+    color: white;
+}
+
+div#menu_izquierda li.seleccionado a {
+    color: white;
 }
 
 div#menu_izquierda ul a {
@@ -129,6 +135,7 @@ div#cuerpo {
     right: 0px;
     bottom: 0px;
     overflow: auto;
+    padding: 5px;
 }
 
 div#caja_sombra {
@@ -206,12 +213,29 @@ div.oculto {
 }
 
 div.error {
-    background-color: yellow;
+    background-color: #F4F596;
+    border: 1px solid #E4E58D;
     padding: 10px;
+    margin: 5px;
     text-align: center;
 }
 
 div.listado div.elemento {
     width: 150px;
     display: inline-block;
+}
+
+div#chat_form_div {
+    position: fixed;
+    bottom: 0px;
+    left: 155px;
+    right: 0px;
+}
+
+div#chat_form_div table {
+    width: 100%;
+}
+
+div#chat_form_div table td#b_send {
+    width: 70px;
 }

@@ -1,5 +1,10 @@
 {% include "header.html" %}
 
 <h1>Lista de comunidades</h1>
+<div class="listado">
+    {% for c in community_list %}
+        <div class="elemento">{{ c.get_name() }}</div>
+    {% endfor %}
+</div>
 
 {% include "footer.html" %}

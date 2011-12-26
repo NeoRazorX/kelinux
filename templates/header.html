@@ -39,8 +39,12 @@
     <ul>
         <li {{ "index"|resaltar_pagina(ke_data.rpage) }}><a href="/">portada</a></li>
         <li {{ "community_list"|resaltar_pagina(ke_data.rpage) }}><a href="/community_list">comunidades</a></li>
+        <li {{ "question_list"|resaltar_pagina(ke_data.rpage) }}><a href="/question_list">preguntas</a></li>
         <li {{ "user_list"|resaltar_pagina(ke_data.rpage) }}><a href="/user_list">usuarios</a></li>
         <li {{ "stats"|resaltar_pagina(ke_data.rpage) }}><a href="/stats">estadísticas</a></li>
+    </ul>
+    <ul>
+        <li {{ "chat_room"|resaltar_pagina(ke_data.rpage) }}><a href="/chat_room">chat</a></li>
     </ul>
 </div>
 
@@ -55,18 +59,23 @@
     </div>
     <div class="oculto" id="f_crear_comunidad">
     {% if ke_data.user.is_logged_on() %}
-    <form>
-        Nombre de la comunidad: <input type="text" name="name" value=""/>
-        <input type="submit" value="guardar"/>
+    <form action="/community_list" method="POST">
+        Nombre de la comunidad: <input type="text" name="name" value="" maxlength="20"/>
+        <input type="submit" value="crear"/>
     </form>
     {% else %}
         <div class="error">Debes estar <a href="/loggin">registrado</a> para esto.</div>
     {% endif %}
     </div>
     <div class="oculto" id="f_crear_pregunta">
-    <form>
-        <textarea rows="10">Escribe tu pregunta...</textarea>
-        <input type="submit" value="guardar"/>
+    <form action="/question_list" method="POST">
+        <textarea rows="10" name="text">Escribe tu pregunta...</textarea>
+        {% if not ke_data.user.is_logged_on() %}
+        Tu email: <input type="text" name="email" size="20" maxlength="50" value=""/>
+        {% else %}
+        <input type="hidden" name="email" value="{{ ke_data.user.get_email() }}"/>
+        {% endif %}
+        <input type="submit" value="crear"/>
     </form>
     </div>
     <div class="oculto" id="f_crear_pagina">
@@ -74,7 +83,7 @@
     <form>
         Título de la página: <input type="text" name="titulo" value="titulo"/>
         <textarea rows="10">Escribe el contenido de la página...</textarea>
-        <input type="submit" value="guardar"/>
+        <input type="submit" value="crear"/>
     </form>
     {% else %}
         <div class="error">Debes estar <a href="/loggin">registrado</a> para esto.</div>
@@ -84,7 +93,7 @@
     {% if ke_data.user.is_logged_on() %}
     <form>
         <textarea rows="10">Escribe tu nota...</textarea>
-        <input type="submit" value="guardar"/>
+        <input type="submit" value="crear"/>
     </form>
     {% else %}
         <div class="error">Debes estar <a href="/loggin">registrado</a> para esto.</div>
@@ -93,6 +102,6 @@
 </div>
 
 <div id="cuerpo"/>
-{% if ke_data.errormsg %}
-<div class="error">{{ ke_data.errormsg }}</div>
+{% if error_msg %}
+<div class="error">{{ error_msg }}</div>
 {% endif %}

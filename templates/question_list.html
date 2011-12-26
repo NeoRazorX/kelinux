@@ -1,10 +1,10 @@
 {% include "header.html" %}
 
-<h1>Portada</h1>
+<h1>Lista de preguntas</h1>
 <table width="100%">
-{% for f in front_list %}
+{% for q in question_list %}
 <tr>
-    <td>{{ f.get_resume() }}</td>
+    <td>{{ q.get_resume() }}</td>
 </tr>
 {% endfor %}
 </table>
