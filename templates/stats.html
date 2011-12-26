@@ -1,0 +1,12 @@
+{% include "header.html" %}
+
+<h1>Estadísticas</h1>
+<div>
+    Uptime: {{ ke_data.stats.uptime|timesince }}<br/>
+    Páginas servidas: {{ ke_data.stats.served_pages }}<br/>
+    <br/>
+    <b>Datos en memoria:</b><br/>
+    Usuarios: {{ ke_data.stats.users }}
+</div>
+
+{% include "footer.html" %}

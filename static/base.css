@@ -1,0 +1,217 @@
+body {
+    margin: 0px;
+    background-color: #f1f1f1;
+    font-family: Arial, Helvetica, sans-serif;
+    color: black;
+    font-size: 13px;
+}
+
+input, textarea {
+    border: 1px solid #bbbbbb;
+}
+
+textarea {
+    width: 99%;
+}
+
+h1 {
+    text-align: center;
+    font-variant: small-caps;
+}
+
+input[type='submit'], input[type='button'] {
+    text-transform: capitalize;
+    font-variant: small-caps;
+    font-size: 15px;
+    font-weight: bold;
+    border-top-left-radius: 2px 2px;
+    border-top-right-radius: 2px 2px;
+    border-bottom-left-radius: 2px 2px;
+    border-bottom-right-radius: 2px 2px;
+}
+
+table#menu_cabecera {
+    position: fixed;
+    top: 0px;
+    width: 100%;
+    height: 45px;
+    padding: 5px;
+    border-bottom: 1px dotted #cccccc;
+}
+
+table#menu_cabecera td#logo {
+    font-size: 20px;
+    text-align: center;
+    text-transform: capitalize;
+    font-variant: small-caps;
+    width: 150px;
+}
+
+table#menu_cabecera td#logo a {
+    color: black;
+}
+
+table#menu_cabecera td#buscador {
+    padding-left: 10px;
+}
+
+table#menu_cabecera td#buscador input#b_buscar {
+    background-color: #4A8BF5;
+    color: white;
+    border: 0px solid #4A8BF5;
+}
+
+table#menu_cabecera td#stats {
+    text-align: right;
+    font-size: 12px;
+}
+
+table#menu_cabecera td#stats span {
+    padding-right: 10px;
+}
+
+div#menu_izquierda {
+    position: fixed;
+    top: 45px;
+    left: 0px;
+    bottom: 0px;
+    width: 150px;
+    padding: 5px;
+    padding-top: 20px;
+    text-align: center;
+    overflow: auto;
+}
+
+div#menu_izquierda a#b_crear {
+    background-color: #D74937;
+    color: white;
+    font-weight: bold;
+    font-variant: small-caps;
+    font-size: 15px;
+    text-decoration: none;
+    text-transform: capitalize;
+    padding: 2px;
+    padding-left: 5px;
+    padding-right: 5px;
+    border-top-left-radius: 2px 2px;
+    border-top-right-radius: 2px 2px;
+    border-bottom-left-radius: 2px 2px;
+    border-bottom-right-radius: 2px 2px;
+}
+
+div#menu_izquierda ul {
+    text-align: left;
+    list-style-type: none;
+    padding-left: 5px;
+    padding-right: 10px;
+}
+
+div#menu_izquierda li:hover {
+    background-color: #dddddd;
+}
+
+div#menu_izquierda li.seleccionado {
+    background-color: silver;
+}
+
+div#menu_izquierda ul a {
+    text-decoration: none;
+    text-transform: capitalize;
+    color: black;
+    font-size: 15px;
+    padding-left: 5px;
+}
+
+div#cuerpo {
+    position: fixed;
+    top: 45px;
+    left: 155px;
+    right: 0px;
+    bottom: 0px;
+    overflow: auto;
+}
+
+div#caja_sombra {
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    opacity: 0.7;
+    filter: alpha(opacity = 70);
+    display: none;
+}
+
+div.popup {
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    z-index: 3;
+    width: 50%;
+    height: 50%;
+    padding: 5px;
+    background-color: #f1f1f1;
+    border: 1px solid #bbbbbb;
+    box-shadow: 10px 10px 10px #333;
+    display: none;
+    overflow: auto;
+}
+
+div.popup h1 {
+    margin-top: 0px;
+    font-size: 18px;
+    text-align: left;
+    color: #222222;
+}
+
+div.popup a.b_cerrar {
+    float: right;
+    text-decoration: none;
+    font-weight: bold;
+    color: #222222;
+}
+
+div.opciones {
+    text-align: center;
+    font-size: 18px;
+    border-bottom: 1px solid #666666;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+div.opciones a.opcion, div.opciones a.opcion_s {
+    padding-left: 5px;
+    padding-right: 5px;
+    color: black;
+    text-decoration: none;
+    border: 1px solid #f1f1f1;
+}
+
+div.opciones a.opcion:hover {
+    background-color: #cccccc;
+    border: 1px solid #666666;
+    border-bottom: 1px solid #cccccc;
+}
+
+div.opciones a.opcion_s {
+    background-color: #666666;
+    color: white;
+    border: 1px solid #666666;
+}
+
+div.oculto {
+    display: none;
+}
+
+div.error {
+    background-color: yellow;
+    padding: 10px;
+    text-align: center;
+}
+
+div.listado div.elemento {
+    width: 150px;
+    display: inline-block;
+}

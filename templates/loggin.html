@@ -1,0 +1,65 @@
+{% include "header.html" %}
+
+{% if not ke_data.user.is_logged_on() %}
+<table width="100%">
+<tr>
+<td valign="top" align="center">
+    <h1>Iniciar sesión:</h1>
+    <form action="/loggin" method="POST">
+        <input type="hidden" name="option" value="loggin"/>
+        Email:<br/>
+        <input type="text" name="email" size="20" maxlength="50" value="{{ ke_data.user.get_email() }}"/><br/>
+        Contraseña:<br/>
+        <input type="password" name="passwd" size="20" maxlength="20"/><br/>
+        <input type="submit" value="entrar"/>
+    </form>
+</td>
+<td valign="top" align="center">
+    <h1>Registrar:</h1>
+    <form action="/loggin" method="POST">
+        <input type="hidden" name="option" value="register"/>
+        Email:<br/>
+        <input type="text" name="email" size="20" maxlength="50" value="{{ ke_data.user.get_email() }}"/><br/>
+        Nick:<br/>
+        <input type="text" name="nick" size="20" maxlength="20" value="{{ ke_data.user.get_nick() }}"/><br/>
+        Contraseña:<br/>
+        <input type="password" name="passwd" size="20" maxlength="20"/><br/>
+        Repetir contraseña:<br/>
+        <input type="password" name="passwd2" size="20" maxlength="20"/><br/>
+        <input type="submit" value="registrar"/>
+    </form>
+</td>
+</tr>
+</table>
+{% else %}
+<table width="100%">
+<tr>
+<td valign="top" align="center">
+    <h1>Datos de usuario:</h1>
+    <form action="/loggin" method="POST">
+        <input type="hidden" name="option" value="update"/>
+        Email:<br/>
+        <input type="text" name="email" size="20" maxlength="50" value="{{ ke_data.user.get_email() }}"/><br/>
+        Nick:<br/>
+        <input type="text" name="nick" size="20" maxlength="20" value="{{ ke_data.user.get_nick() }}"/><br/>
+        Contraseña:<br/>
+        <input type="password" name="passwd" size="20" maxlength="20"/><br/>
+        Nueva contraseña:<br/>
+        <input type="password" name="npasswd" size="20" maxlength="20"/><br/>
+        Repetir nueva contraseña:<br/>
+        <input type="password" name="npasswd2" size="20" maxlength="20"/><br/>
+        <input type="submit" value="modificar"/>
+    </form>
+</td>
+<td valign="top" align="center">
+    <h1>Salir:</h1>
+    <form action="/loggin" method="POST">
+        <input type="hidden" name="option" value="loggout"/>
+        <input type="submit" value="cerrar sesión"/>
+    </form>
+</td>
+</tr>
+</table>
+{% endif %}
+
+{% include "footer.html" %}
