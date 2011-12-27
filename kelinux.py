@@ -22,6 +22,11 @@ env.filters['resaltar_pagina'] = resaltar_pagina
 
 # definimos la configuración de cherrypy
 cp_config = {
+    'global': {
+        'tools.encode.on': True,
+        'toots.encode.encoding': 'utf-8',
+        'tools.decode.on': True
+    },
     '/favicon.ico': {
         'tools.staticfile.on': True,
         'tools.staticfile.filename': os.getcwd()+'/img/favicon.ico',
@@ -42,7 +47,7 @@ class Portada(Ke_web):
         self.sc.sum_served_pages()
         tmpl = env.get_template('main.html')
         return tmpl.render(ke_data=self.get_kedata('index'),
-                           front_list=self.sc.get_front()).encode('utf-8')
+                           front_list=self.sc.get_front())
     
     @cherrypy.expose
     def loggin(self, option='', email='', nick='', passwd='', passwd2=''):
@@ -60,9 +65,9 @@ class Portada(Ke_web):
                 error_msg = False
                 user = self.sc.fast_loggin()
             return tmpl.render(ke_data=self.get_kedata('loggin', user),
-                               error_msg=error_msg).encode('utf-8')
+                               error_msg=error_msg)
         else:
-            return tmpl.render( ke_data=self.get_kedata('loggin') ).encode('utf-8')
+            return tmpl.render( ke_data=self.get_kedata('loggin') )
     
     @cherrypy.expose
     def community_list(self, name=''):
@@ -72,36 +77,36 @@ class Portada(Ke_web):
             community,error_msg = self.sc.new_community(name)
             return tmpl.render(ke_data=self.get_kedata('community_list'),
                                error_msg=error_msg,
-                               community_list=self.sc.get_all_communities()).encode('utf-8')
+                               community_list=self.sc.get_all_communities())
         else:
             return tmpl.render(ke_data=self.get_kedata('community_list'),
-                               community_list=self.sc.get_all_communities()).encode('utf-8')
+                               community_list=self.sc.get_all_communities())
     
     @cherrypy.expose
     def question_list(self, text='', email=''):
         self.sc.sum_served_pages()
         tmpl = env.get_template('question_list.html')
         if cherrypy.request.method == 'POST':
-            question,error_msg = self.sc.new_question(text, email)
+            question,error_msg = self.sc.new_question(text, self.get_current_user())
             return tmpl.render(ke_data=self.get_kedata('question_list'),
                                error_msg=error_msg,
-                               question_list=self.sc.get_all_questions()).encode('utf-8')
+                               question_list=self.sc.get_all_questions())
         else:
             return tmpl.render(ke_data=self.get_kedata('question_list'),
-                               question_list=self.sc.get_all_questions()).encode('utf-8')
+                               question_list=self.sc.get_all_questions())
     
     @cherrypy.expose
     def user_list(self):
         self.sc.sum_served_pages()
         tmpl = env.get_template('user_list.html')
         return tmpl.render(ke_data=self.get_kedata('user_list'),
-                           user_list=self.sc.get_all_users() ).encode('utf-8')
+                           user_list=self.sc.get_all_users() )
     
     @cherrypy.expose
     def stats(self):
         self.sc.sum_served_pages()
         tmpl = env.get_template('stats.html')
-        return tmpl.render( ke_data=self.get_kedata('stats') ).encode('utf-8')
+        return tmpl.render( ke_data=self.get_kedata('stats') )
     
     @cherrypy.expose
     def chat_room(self, text=''):
@@ -109,13 +114,15 @@ class Portada(Ke_web):
         ke_data = self.get_kedata('chat_room')
         if cherrypy.request.method == 'POST':
             if text != '':
-                self.sc.new_chat_msg(text, self.get_current_user().get_nick())
+                self.sc.new_chat_msg(text, self.get_current_user().nick)
             cherrypy.response.headers['Content-Type'] = 'text/plain'
-            return self.sc.get_chat_log()
+            tmpl = env.get_template('chat_log.html')
+            return tmpl.render(chat_log=self.sc.get_chat_log(),
+                               chat_users=self.sc.chat_user_alive(self.get_current_user().nick,
+                                                                  cherrypy.request.remote.ip) )
         else:
             tmpl = env.get_template('chat_room.html')
-            return tmpl.render(ke_data=ke_data).encode('utf-8')
+            return tmpl.render(ke_data=ke_data)
 
 if __name__ == "__main__":
     cherrypy.quickstart(Portada(), config=cp_config)
-

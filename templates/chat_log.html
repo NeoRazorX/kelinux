@@ -1,0 +1,26 @@
+<div class="error">Mensajes en orden inverso. No reveles nunca tus contraseñas.</div>
+
+<table>
+<tr>
+    <td>
+    <div class="redondeado">
+        {% for c in chat_log %}
+        <div class="chat_msg">
+            <span class="nick">{{ c[1] }}</span>
+            <span class="fecha">{{ c[0]|timesince }}</span>
+            <br/>
+            {{ c[2] }}
+        </div>
+        {% endfor %}
+    </div>
+    </td>
+    <td id="chat_user_list">
+    <div class="redondeado">
+        <b>Usuarios:</b><br/>
+        {% for u in chat_users %}
+        {{ u[1] }}<br/>
+        {% endfor %}
+    </div>
+    </td>
+</tr>
+</table>

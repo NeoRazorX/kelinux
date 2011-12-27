@@ -30,8 +30,8 @@
     <a id="b_crear" href="#" onclick="mostrar_popup('popup_crear')">crear</a>
     <br/><br/>
     <ul>
-        {% if ke_data.user.is_logged_on() %}
-        <li {{ "loggin"|resaltar_pagina(ke_data.rpage) }}><a href="/loggin">{{ ke_data.user.get_nick() }}</a></li>
+        {% if ke_data.user.logged_on %}
+        <li {{ "loggin"|resaltar_pagina(ke_data.rpage) }}><a href="/loggin">{{ ke_data.user.nick }}</a></li>
         {% else %}
         <li {{ "loggin"|resaltar_pagina(ke_data.rpage) }}><a href="/loggin">iniciar sesión</a></li>
         {% endif %}
@@ -58,7 +58,7 @@
     <a class="opcion" id="b_crear_nota" href="#" onclick="seleccionar_opcion('o_crear', 'b_crear_nota', 'f_crear_nota')">nota</a>
     </div>
     <div class="oculto" id="f_crear_comunidad">
-    {% if ke_data.user.is_logged_on() %}
+    {% if ke_data.user.logged_on %}
     <form action="/community_list" method="POST">
         Nombre de la comunidad: <input type="text" name="name" value="" maxlength="20"/>
         <input type="submit" value="crear"/>
@@ -70,16 +70,14 @@
     <div class="oculto" id="f_crear_pregunta">
     <form action="/question_list" method="POST">
         <textarea rows="10" name="text">Escribe tu pregunta...</textarea>
-        {% if not ke_data.user.is_logged_on() %}
+        {% if not ke_data.user.logged_on %}
         Tu email: <input type="text" name="email" size="20" maxlength="50" value=""/>
-        {% else %}
-        <input type="hidden" name="email" value="{{ ke_data.user.get_email() }}"/>
         {% endif %}
         <input type="submit" value="crear"/>
     </form>
     </div>
     <div class="oculto" id="f_crear_pagina">
-    {% if ke_data.user.is_logged_on() %}
+    {% if ke_data.user.logged_on %}
     <form>
         Título de la página: <input type="text" name="titulo" value="titulo"/>
         <textarea rows="10">Escribe el contenido de la página...</textarea>
@@ -90,7 +88,7 @@
     {% endif %}
     </div>
     <div class="oculto" id="f_crear_nota">
-    {% if ke_data.user.is_logged_on() %}
+    {% if ke_data.user.logged_on %}
     <form>
         <textarea rows="10">Escribe tu nota...</textarea>
         <input type="submit" value="crear"/>

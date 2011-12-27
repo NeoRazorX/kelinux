@@ -11,7 +11,7 @@ function carga_chat_log()
         req.send(null);
         document.chat_form.text.focus();
         clearTimeout(recargar);
-        recargar = setTimeout("carga_chat_log()", 5000);
+        recargar = setTimeout("carga_chat_log()", 10000);
     }
     else
     {

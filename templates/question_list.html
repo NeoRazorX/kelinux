@@ -1,12 +1,14 @@
 {% include "header.html" %}
 
 <h1>Lista de preguntas</h1>
-<table width="100%">
+
+<div class="redondeado">
 {% for q in question_list %}
-<tr>
-    <td>{{ q.get_resume() }}</td>
-</tr>
+    <div class="chat_msg">
+        <span class="fecha">{{ q.date|timesince }}</span>
+        {{ q.get_resume() }}
+    </div>
 {% endfor %}
-</table>
+</div>
 
 {% include "footer.html" %}

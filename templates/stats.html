@@ -1,13 +1,22 @@
 {% include "header.html" %}
 
 <h1>Estadísticas</h1>
-<div>
-    Uptime: {{ ke_data.stats.uptime|timesince }}<br/>
-    Páginas servidas: {{ ke_data.stats.served_pages }}<br/>
-    <br/>
-    <b>Datos en memoria:</b><br/>
-    Usuarios: {{ ke_data.stats.users }}<br/>
-    Comunidades: {{ ke_data.stats.communities }}
+<div class="redondeado">
+<div class="listado">
+    <div class="elemento">Uptime: {{ ke_data.stats.uptime|timesince }}</div>
+    <div class="elemento">Páginas servidas: {{ ke_data.stats.served_pages }}</div>
+</div>
+</div>
+
+<br/>
+
+<h1>Datos en memoria:</h1>
+<div class="redondeado">
+<div class="listado">
+    <div class="elemento">Usuarios: {{ ke_data.stats.users }}</div>
+    <div class="elemento">Comunidades: {{ ke_data.stats.communities }}</div>
+    <div class="elemento">Preguntas: {{ ke_data.stats.questions }}</div>
+</div>
 </div>
 
 {% include "footer.html" %}

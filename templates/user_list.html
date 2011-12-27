@@ -1,10 +1,13 @@
 {% include "header.html" %}
 
 <h1>Lista de usuarios</h1>
+
+<div class="redondeado">
 <div class="listado">
     {% for u in user_list %}
-        <div class="elemento">{{ u.get_nick() }}</div>
+        <div class="elemento">{{ u.nick }}</div>
     {% endfor %}
+</div>
 </div>
 
 {% include "footer.html" %}

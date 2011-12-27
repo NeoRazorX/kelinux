@@ -1,12 +1,14 @@
 {% include "header.html" %}
 
 <h1>Portada</h1>
-<table width="100%">
+
+<div class="redondeado">
 {% for f in front_list %}
-<tr>
-    <td>{{ f.get_resume() }}</td>
-</tr>
+    <div class="chat_msg">
+        <span class="fecha">{{ f.date|timesince }}</span>
+        {{ f.get_resume() }}
+    </div>
 {% endfor %}
-</table>
+</div>
 
 {% include "footer.html" %}

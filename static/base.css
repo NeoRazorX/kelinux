@@ -35,7 +35,7 @@ table#menu_cabecera {
     top: 0px;
     width: 100%;
     height: 45px;
-    padding: 5px;
+    padding: 0px;
     border-bottom: 1px dotted #cccccc;
 }
 
@@ -225,17 +225,60 @@ div.listado div.elemento {
     display: inline-block;
 }
 
-div#chat_form_div {
-    position: fixed;
-    bottom: 0px;
-    left: 155px;
-    right: 0px;
+div.redondeado {
+    background-color: white;
+    border: 1px solid silver;
+    border-top-left-radius: 5px 5px;
+    border-top-right-radius: 5px 5px;
+    border-bottom-left-radius: 5px 5px;
+    border-bottom-right-radius: 5px 5px;
+    padding: 5px;
+    display: table;
+    margin-left: auto;
+    margin-right: auto;
 }
 
-div#chat_form_div table {
+div.chat_msg {
+    border-bottom: 1px solid silver;
+    padding: 5px;
+}
+
+div.chat_msg span.nick {
+    font-weight: bold;
+    padding-right: 10px;
+}
+
+div.chat_msg span.fecha {
+    float: right;
+    padding-left: 10px;
+}
+
+table#chat_form_table {
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+table#chat_form_table td#b_send {
+    width: 70px;
+}
+
+table#chat_form_table input#i_chat_text {
+    width: 99%;
+}
+
+div#chat_log {
+    margin-top: 5px;
+}
+
+div#chat_log table {
     width: 100%;
 }
 
-div#chat_form_div table td#b_send {
-    width: 70px;
+div#chat_log table td {
+    vertical-align: top;
+}
+
+div#chat_log table td#chat_user_list {
+    width: 160px;
+    text-align: right;
 }

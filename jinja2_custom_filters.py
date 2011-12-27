@@ -4,7 +4,7 @@
 from datetime import datetime, timedelta
 
 def timesince(t):
-    time_str = ''
+    time_str = 'ahora mismo'
     now = datetime.now()
     diff = now - t
     periods = (
