@@ -26,23 +26,36 @@ class Ke_user(Base):
     id = Column(Integer, primary_key=True)
     email = Column(String(50))
     password = Column(String(40))
-    nick = Column(String(18))
-    admin = Column(Boolean)
-    loggin_key = Column(String(40))
+    nick = Column(String(16))
+    admin = Column(Boolean, default=False)
+    log_key = Column(String(40))
+    points = Column(Integer, default=10)
+    created = Column(DateTime, default=datetime.now())
+    last_log_in = Column(DateTime, default=datetime.now())
     
     logged_on = False
     
-    def __init__(self, e='', p='', n='anonymous', a=False):
+    def __init__(self, e='', p='', n='anonymous', a=False, pts=10):
         self.email = e
         self.password = p
         self.nick = n
         self.admin = a
+        self.log_key = ''
+        self.points = pts
+        self.created = datetime.now()
+        self.last_log_in = datetime.now()
     
     def __repr__(self):
         return "<Ke_user('%s','%s')>" % (self.email, self.nick)
     
+    def exists(self):
+        if self.email != '' and self.password != '':
+            return True
+        else:
+            return False
+    
     def set_nick(self, n):
-        if re.match("^[a-zA-Z0-9_]{4,18}$", n):
+        if re.match("^[a-zA-Z0-9_]{4,16}$", n):
             self.nick = n
             return True
         else:
@@ -65,12 +78,20 @@ class Ke_user(Base):
     def set_admin(self, a):
         self.admin = a
     
-    def new_loggin_key(self):
-        self.loggin_key = hashlib.sha1( str(random.randint(0, 999999)) ).hexdigest()
+    def new_log_key(self):
+        self.log_key = hashlib.sha1( str(random.randint(0, 999999)) ).hexdigest()
+        self.last_log_in = datetime.now()
         self.logged_on = True
     
-    def set_logged_on(self, l):
-        self.logged_on = l
+    def sum_points(self, p):
+        try:
+            v = int(p)
+        except:
+            v = 0
+        if v != 0:
+            self.points += v
+            if self.points < 0:
+                self.points = 0
 
 
 # clase de comunidad ya mapeada con sqlalchemy
@@ -80,18 +101,35 @@ class Ke_community(Base):
     
     id = Column(Integer, primary_key=True)
     name = Column(String(20))
+    description = Column(String(200))
+    created = Column(DateTime, default=datetime.now())
     num_users = Column(Integer, default=0)
     
-    def __init__(self, n=''):
+    def __init__(self, n='', d=''):
         self.name = n
+        self.description = d
+        self.created = datetime.now()
         self.num_users = 0
     
     def __repr__(self):
         return "<Ke_community('%s')>" % (self.name)
     
+    def exists(self):
+        if self.name != '' and self.description != '':
+            return True
+        else:
+            return False
+    
     def set_name(self, n):
         if re.match("^[a-zA-Z0-9_]{3,20}$", n):
             self.name = n
+            return True
+        else:
+            return False
+    
+    def set_description(self, t):
+        if t.strip() != '':
+            self.description = cgi.escape(t, True)
             return True
         else:
             return False
@@ -105,18 +143,29 @@ class Ke_question(Base):
     id = Column(Integer, primary_key=True)
     text = Column(Text)
     user_id = Column(Integer, ForeignKey('users.id'))
-    date = Column(DateTime, default=datetime.now())
-    num_responses = Column(Integer, default=0)
+    created = Column(DateTime, default=datetime.now())
+    updated = Column(DateTime, default=datetime.now())
+    num_answers = Column(Integer, default=0)
+    status = Column(Integer, default=0)
+    reward = Column(Integer, default=1)
     
-    nick = ''
-    
-    def __init__(self, t='', e=''):
+    def __init__(self, t='', u=Ke_user()):
         self.text = t
-        self.date = datetime.now()
-        self.num_responses = 0
+        self.user_id = u.id
+        self.created = datetime.now()
+        self.updated = datetime.now()
+        self.num_answers = 0
+        self.status = 0
+        self.reward = 1
     
     def __repr__(self):
         return "<Ke_question('%s', '%s')>" % (self.resume, self.email)
+    
+    def exists(self):
+        if self.text != '':
+            return True
+        else:
+            return False
     
     def set_text(self, t):
         if t.strip() != '':
@@ -125,16 +174,67 @@ class Ke_question(Base):
         else:
             return False
     
-    def get_resume(self):
-        return self.text[:200]
-    
-    def set_user(self, u=Ke_user()):
+    def set_user(self, u):
         if u.logged_on:
             self.user_id = u.id
-            self.nick = i.nick
             return True
         else:
             return False
+    
+    def get_resume(self):
+        return self.text[:200]
+    
+    def get_user(self):
+        user = Ke_user()
+        if self.user_id != 0:
+            session = Ke_session()
+            user2 = session.query(Ke_user).filter_by(id=self.user_id).first()
+            session.close()
+            try:
+                if user2.exists():
+                    user = user2
+            except:
+                pass
+        return user
+    
+    def set_status(self, s):
+        if self.get_status(s) != 'estado desconocido':
+            self.status = s
+            return True
+        else:
+            return False
+    
+    def get_status(self, s=None):
+        if s is None:
+            s = self.status
+        if s == 0:
+            return 'nueva'
+        elif s == 1:
+            return 'abierta'
+        elif s == 2:
+            return 'incompleta'
+        elif s == 9:
+            return 'parcialmente solucionada'
+        elif s == 10:
+            return u'pendiente de confirmación'
+        elif s == 11:
+            return 'solucionada'
+        elif s == 20:
+            return 'duplicada'
+        elif s == 21:
+            return 'erronea'
+        elif s == 22:
+            return 'antigua'
+        else:
+            return 'estado desconocido'
+    
+    def sum_reward(self, p):
+        try:
+            v = int(p)
+        except:
+            v = 0
+        if v > 0:
+            self.reward += v
 
 
 class Super_cache:
@@ -152,18 +252,28 @@ class Super_cache:
     }
     
     def get_user_by_id(self, i):
-        encontrado = False
-        for u in self.users:
-            if u.id == i:
-                user = u
-                encontrado = True
-                break
-        if not encontrado:
-            session = Ke_session()
-            user = session.query(Ke_user).filter_by(id=i).first()
-            if user:
-                self.users.append(user)
-            session.close()
+        try:
+            i2 = int(i)
+        except:
+            i2 = -1
+        if i2 <= 0:
+            user = Ke_user()
+        else:
+            encontrado = False
+            for u in self.users:
+                if u.id == i2:
+                    user = u
+                    encontrado = True
+                    break
+            if not encontrado:
+                session = Ke_session()
+                user = session.query(Ke_user).filter_by(id=i2).first()
+                session.close()
+                try:
+                    if user.exists():
+                        self.users.append(user)
+                except:
+                    user = Ke_user()
         return user
     
     def get_user_by_email(self, email):
@@ -176,9 +286,12 @@ class Super_cache:
         if not encontrado:
             session = Ke_session()
             user = session.query(Ke_user).filter_by(email=email).first()
-            if user:
-                self.users.append(user)
             session.close()
+            try:
+                if user.exists():
+                    self.users.append(user)
+            except:
+                user = Ke_user()
         return user
     
     def get_all_users(self):
@@ -186,95 +299,6 @@ class Super_cache:
         users = session.query(Ke_user).order_by(Ke_user.nick).all()
         session.close()
         return users
-    
-    def get_cookie(self, name):
-        value = ''
-        try:
-            value = cherrypy.request.cookie[name].value
-        except:
-            pass
-        return value
-    
-    def set_cookie(self, name, value, expires=APP_DEFAULT_COOKIE_EXPIRATION):
-        req_cookie = cherrypy.response.cookie
-        req_cookie[name] = value
-        req_cookie[name]['expires'] = expires
-    
-    def loggin(self, email='', passwd=''):
-        user = False
-        error_msg = False
-        if email == '':
-            error_msg = 'introduce el email'
-        elif passwd == '':
-            error_msg = 'introduce la contrasenya'
-        else:
-            session = Ke_session()
-            user = session.query(Ke_user).filter_by(email=email).first()
-            if not user:
-                error_msg = 'usuario no encontrado'
-            elif user.password == hashlib.sha1(passwd).hexdigest():
-                user.new_loggin_key()
-                session.commit()
-                self.set_cookie('email', user.email)
-                self.set_cookie('loggin_key', user.loggin_key)
-            else:
-                error_msg = 'contrasenya incorrecta'
-            session.close()
-        return user,error_msg
-    
-    def fast_loggin(self):
-        user = Ke_user()
-        email = self.get_cookie('email')
-        loggin_key = self.get_cookie('loggin_key')
-        if email != '' and loggin_key != '':
-            user2 = self.get_user_by_email(email)
-            if user2:
-                if user2.loggin_key == loggin_key:
-                    user = user2
-                    user.set_logged_on(True)
-        return user
-    
-    def register(self, email='', nick='', passwd='', passwd2=''):
-        user = False
-        error_msg = False
-        if email == '':
-            error_msg = 'introduce un email'
-        elif nick == '':
-            error_msg = 'introduce un nombre de usuario'
-        elif passwd == '':
-            error_msg = 'introduce una contrasenya'
-        elif passwd != passwd2:
-            error_msg = 'las contrasenyas no coinciden'
-        else:
-            user = self.get_user_by_email(email)
-            if user:
-                error_msg = 'el usuario ya existe, elige otro email'
-            else:
-                session = Ke_session()
-                user = Ke_user()
-                if not user.set_email(email):
-                    error_msg = 'el email no es valido'
-                elif not user.set_password(passwd):
-                    error_msg = 'la contraseña no es valida'
-                elif not user.set_nick(nick):
-                    error_msg = 'el nombre de usuario no es valido'
-                else:
-                    if user.nick == APP_OWNER:
-                        user.set_admin(True)
-                    try:
-                        user.new_loggin_key()
-                        session.add(user)
-                        session.commit()
-                        self.set_cookie('email', user.email)
-                        self.set_cookie('loggin_key', user.loggin_key)
-                    except:
-                        error_msg = 'error al guardar el usuario en la base de datos'
-                session.close()
-        return user,error_msg
-    
-    def loggout(self):
-        self.set_cookie('email', '', 0)
-        self.set_cookie('loggin_key', '', 0)
     
     def get_community_by_name(self, n):
         encontrado = False
@@ -286,9 +310,12 @@ class Super_cache:
         if not encontrado:
             session = Ke_session()
             community = session.query(Ke_community).filter_by(name=n).first()
-            if community:
-                self.communities.append(community)
             session.close()
+            try:
+                if community.exists():
+                    self.communities.append(community)
+            except:
+                community = Ke_community()
         return community
     
     def get_all_communities(self):
@@ -297,74 +324,40 @@ class Super_cache:
         session.close()
         return communities
     
-    def new_community(self, n=''):
-        community = False
-        error_msg = False
-        if n == '':
-            error_msg = 'introduce un nombre'
-        else:
-            community = self.get_community_by_name(n)
-            if community:
-                error_msg = 'la comunidad ya existe'
-            else:
-                community = Ke_community()
-                if not community.set_name(n):
-                    error_msg = 'introduce un nombre valido'
-                else:
-                    try:
-                        session = Ke_session()
-                        session.add(community)
-                        session.commit()
-                        session.close()
-                    except:
-                        error_msg = 'error al guardar la comunidad en la base de datos'
-        return community,error_msg
-    
     def get_question_by_id(self, i):
-        encontrado = False
-        for q in self.questions:
-            if q.id == i:
-                question = q
-                encontrado = True
-                break
-        if not encontrado:
-            session = Ke_session()
-            questions = session.query(Ke_question).filter_by(id=i).first()
-            if question:
-                self.questions.append(question)
-            session.close()
+        try:
+            i2 = int(i)
+        except:
+            i2 = -1
+        if i2 <= 0:
+            question = Ke_question()
+        else:
+            encontrado = False
+            for q in self.questions:
+                if q.id == i2:
+                    question = q
+                    encontrado = True
+                    break
+            if not encontrado:
+                session = Ke_session()
+                questions = session.query(Ke_question).filter_by(id=i2).first()
+                session.close()
+                try:
+                    if question.exists():
+                        self.questions.append(question)
+                except:
+                    question = Ke_question()
         return question
     
     def get_all_questions(self):
         session = Ke_session()
-        questions = session.query(Ke_question).all()
+        questions = session.query(Ke_question).order_by(Ke_question.id.desc()).all()
         session.close()
         return questions
     
-    def new_question(self, text='', user=Ke_user()):
-        question = False
-        error_msg = False
-        if text == '':
-            error_msg = 'introduce algo de texto'
-        else:
-            question = Ke_question()
-            if not question.set_text(text):
-                error_msg = 'introduce texto valido'
-            elif not question.set_user(user):
-                error_msg = 'usuario no valido: '+user.nick
-            else:
-                try:
-                    session = Ke_session()
-                    session.add(question)
-                    session.commit()
-                    session.close()
-                except:
-                    error_msg = 'error al guardar la pregunta en la base de datos'
-        return question,error_msg
-    
     def get_front(self):
         session = Ke_session()
-        questions = session.query(Ke_question)[0:20]
+        questions = session.query(Ke_question).order_by(Ke_question.id.desc())[0:20]
         session.close()
         return questions
     
@@ -406,19 +399,156 @@ class Super_cache:
 
 class Ke_web:
     sc = Super_cache()
+    current_user = Ke_user()
+    ke_data = ke_data = {
+        'appname': APP_NAME,
+        'appdomain': APP_DOMAIN,
+        'user': current_user
+    }
     
-    def get_current_user(self):
-        return self.sc.fast_loggin()
+    def first_step(self, tittle):
+        self.fast_log_in()
+        self.sc.sum_served_pages()
+        self.ke_data['stats'] = self.sc.get_stats()
+        self.ke_data['rpage'] = tittle
+        self.ke_data['errormsg'] = False
     
-    # devuelve un array con toda la información necesaria para las templates
-    def get_kedata(self, rpage='', user=False):
-        if not user:
-            user = self.sc.fast_loggin()
-        ke_data = {
-            'appname': APP_NAME,
-            'appdomain': APP_DOMAIN,
-            'stats': self.sc.get_stats(),
-            'user': user,
-            'rpage': rpage
-        }
-        return ke_data
+    def set_current_user(self, user):
+        self.current_user = user
+        self.ke_data['user'] = self.current_user
+    
+    def get_cookie(self, name):
+        try:
+            value = cherrypy.request.cookie[name].value
+        except:
+            value = ''
+        return value
+    
+    def set_cookie(self, name, value, expires=APP_DEFAULT_COOKIE_EXPIRATION):
+        req_cookie = cherrypy.response.cookie
+        req_cookie[name] = value
+        req_cookie[name]['expires'] = expires
+    
+    def do_log_in(self, email='', passwd=''):
+        if email == '':
+            self.ke_data['errormsg'] = 'introduce el email'
+        elif passwd == '':
+            self.ke_data['errormsg'] = u'introduce la contraseña'
+        else:
+            user = self.sc.get_user_by_email(email)
+            if not user.exists():
+                self.ke_data['errormsg'] = 'usuario no encontrado'
+            elif user.password == hashlib.sha1(passwd).hexdigest():
+                session = Ke_session()
+                user.new_log_key()
+                self.set_current_user(user)
+                session.commit()
+                session.close()
+                self.set_cookie('user_id', user.id)
+                self.set_cookie('log_key', user.log_key)
+                raise cherrypy.HTTPRedirect('/')
+            else:
+                self.ke_data['errormsg'] = u'contraseña incorrecta'
+    
+    def fast_log_in(self):
+        user = Ke_user()
+        user_id = self.get_cookie('user_id')
+        log_key = self.get_cookie('log_key')
+        if user_id != '' and log_key != '':
+            user2 = self.sc.get_user_by_id(user_id)
+            if user2.exists():
+                if user2.log_key == log_key:
+                    user = user2
+                    user.logged_on = True
+                else:
+                    self.ke_data['errormsg'] = u'cookie no válida, debes volver a iniciar sesión'
+            else:
+                self.ke_data['errormsg'] = 'tienes la cookie de un usuario que ya no existe'
+        self.set_current_user(user)
+    
+    def register(self, email='', nick='', passwd='', passwd2=''):
+        if email == '':
+            self.ke_data['errormsg'] = 'introduce un email'
+        elif nick == '':
+            self.ke_data['errormsg'] = 'introduce un nombre de usuario'
+        elif passwd == '':
+            self.ke_data['errormsg'] = u'introduce una contraseña'
+        elif passwd != passwd2:
+            self.ke_data['errormsg'] = u'las contraseñas no coinciden'
+        else:
+            user = self.sc.get_user_by_email(email)
+            if user.exists():
+                self.ke_data['errormsg'] = 'el usuario ya existe, elige otro email'
+            else:
+                session = Ke_session()
+                user = Ke_user()
+                if not user.set_email(email):
+                    self.ke_data['errormsg'] = u'el email no es válido'
+                elif not user.set_password(passwd):
+                    self.ke_data['errormsg'] = u'la contraseña no es válida (debe contener entre 4 y 20 caracteres alfanuméricos)'
+                elif not user.set_nick(nick):
+                    self.ke_data['errormsg'] = u'el nombre de usuario no es válido (debe contener entre 4 y 16 caracteres alfanuméricos)'
+                else:
+                    if user.nick == APP_OWNER:
+                        user.set_admin(True)
+                    try:
+                        user.new_log_key()
+                        self.set_current_user(user)
+                        session.add(user)
+                        session.commit()
+                        self.set_cookie('user_id', user.id)
+                        self.set_cookie('log_key', user.log_key)
+                    except:
+                        self.ke_data['errormsg'] = 'error al guardar el usuario en la base de datos'
+                session.close()
+            if not self.ke_data['errormsg']:
+                raise cherrypy.HTTPRedirect('/')
+    
+    def do_log_out(self):
+        self.set_cookie('user_id', '', 0)
+        self.set_cookie('log_key', '', 0)
+        self.set_current_user( Ke_user() )
+    
+    def new_community(self, n='', d=''):
+        community = Ke_community()
+        if n == '':
+            self.ke_data['errormsg'] = 'introduce un nombre para la comunidad'
+        if d == '':
+            self.ke_data['errormsg'] = u'introduce una descripción para la comunidad'
+        else:
+            community = self.sc.get_community_by_name(n)
+            if community.exists():
+                self.ke_data['errormsg'] = 'la comunidad ya existe'
+            else:
+                if not community.set_name(n):
+                    self.ke_data['errormsg'] = u'introduce un nombre válido (debe contener entre 3 y 20 caracteres alfanuméricos)'
+                elif not community.set_description(d):
+                    self.ke_data['errormsg'] = u'introduce una descripción válida'
+                else:
+                    try:
+                        session = Ke_session()
+                        session.add(community)
+                        session.commit()
+                        session.close()
+                    except:
+                        self.ke_data['errormsg'] = 'error al guardar la comunidad en la base de datos'
+        return community
+    
+    def new_question(self, text=''):
+        question = Ke_question()
+        if text == '':
+            self.ke_data['errormsg'] = 'introduce algo de texto!'
+        else:
+            if not question.set_text(text):
+                self.ke_data['errormsg'] = u'introduce texto válido'
+            elif not question.set_user( self.current_user ):
+                self.ke_data['errormsg'] = u'usuario no válido: '+self.current_user.nick
+            else:
+                try:
+                    session = Ke_session()
+                    session.add(question)
+                    session.commit()
+                    session.close()
+                except:
+                    self.ke_data['errormsg'] = 'error al guardar la pregunta en la base de datos'
+        return question

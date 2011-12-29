@@ -44,85 +44,76 @@ cp_config = {
 class Portada(Ke_web):
     @cherrypy.expose
     def index(self):
-        self.sc.sum_served_pages()
+        self.first_step('index')
         tmpl = env.get_template('main.html')
-        return tmpl.render(ke_data=self.get_kedata('index'),
-                           front_list=self.sc.get_front())
+        return tmpl.render(question_list=self.sc.get_front(),
+                           community_list=self.sc.get_all_communities(),
+                           ke_data=self.ke_data)
     
     @cherrypy.expose
-    def loggin(self, option='', email='', nick='', passwd='', passwd2=''):
-        self.sc.sum_served_pages()
-        tmpl = env.get_template('loggin.html')
+    def log_in(self, option='', email='', nick='', passwd='', passwd2=''):
+        self.first_step('log_in')
         if cherrypy.request.method == 'POST':
-            if option == 'loggin':
-                user,error_msg = self.sc.loggin(email, passwd)
+            if option == 'log_in':
+                self.do_log_in(email, passwd)
             elif option == 'register':
-                user,error_msg = self.sc.register(email, nick, passwd, passwd2)
-            elif option == 'loggout':
-                error_msg = self.sc.loggout()
-                user = Ke_user()
-            else:
-                error_msg = False
-                user = self.sc.fast_loggin()
-            return tmpl.render(ke_data=self.get_kedata('loggin', user),
-                               error_msg=error_msg)
-        else:
-            return tmpl.render( ke_data=self.get_kedata('loggin') )
+                self.register(email, nick, passwd, passwd2)
+            elif option == 'log_out':
+                self.do_log_out()
+        tmpl = env.get_template('log_in.html')
+        return tmpl.render(ke_data=self.ke_data)
     
     @cherrypy.expose
-    def community_list(self, name=''):
-        self.sc.sum_served_pages()
+    def community_list(self, name='', description=''):
+        self.first_step('community_list')
         tmpl = env.get_template('community_list.html')
         if cherrypy.request.method == 'POST':
-            community,error_msg = self.sc.new_community(name)
-            return tmpl.render(ke_data=self.get_kedata('community_list'),
-                               error_msg=error_msg,
-                               community_list=self.sc.get_all_communities())
+            return tmpl.render(community=self.new_community(name, description),
+                               community_list=self.sc.get_all_communities(),
+                               ke_data=self.ke_data)
         else:
-            return tmpl.render(ke_data=self.get_kedata('community_list'),
-                               community_list=self.sc.get_all_communities())
+            return tmpl.render(community_list=self.sc.get_all_communities(),
+                               ke_data=self.ke_data)
     
     @cherrypy.expose
     def question_list(self, text='', email=''):
-        self.sc.sum_served_pages()
+        self.first_step('question_list')
         tmpl = env.get_template('question_list.html')
         if cherrypy.request.method == 'POST':
-            question,error_msg = self.sc.new_question(text, self.get_current_user())
-            return tmpl.render(ke_data=self.get_kedata('question_list'),
-                               error_msg=error_msg,
-                               question_list=self.sc.get_all_questions())
+            return tmpl.render(question=self.new_question(text),
+                               question_list=self.sc.get_all_questions(),
+                               ke_data=self.ke_data)
         else:
-            return tmpl.render(ke_data=self.get_kedata('question_list'),
-                               question_list=self.sc.get_all_questions())
+            return tmpl.render(question_list=self.sc.get_all_questions(),
+                               ke_data=self.ke_data)
     
     @cherrypy.expose
     def user_list(self):
-        self.sc.sum_served_pages()
+        self.first_step('user_list')
         tmpl = env.get_template('user_list.html')
-        return tmpl.render(ke_data=self.get_kedata('user_list'),
-                           user_list=self.sc.get_all_users() )
+        return tmpl.render(user_list=self.sc.get_all_users(),
+                           ke_data=self.ke_data)
     
     @cherrypy.expose
     def stats(self):
-        self.sc.sum_served_pages()
+        self.first_step('stats')
         tmpl = env.get_template('stats.html')
-        return tmpl.render( ke_data=self.get_kedata('stats') )
+        return tmpl.render(ke_data=self.ke_data)
     
     @cherrypy.expose
     def chat_room(self, text=''):
-        self.sc.sum_served_pages()
-        ke_data = self.get_kedata('chat_room')
+        self.first_step('chat_room')
         if cherrypy.request.method == 'POST':
             if text != '':
-                self.sc.new_chat_msg(text, self.get_current_user().nick)
+                self.sc.new_chat_msg(text, self.current_user.nick)
             cherrypy.response.headers['Content-Type'] = 'text/plain'
             tmpl = env.get_template('chat_log.html')
             return tmpl.render(chat_log=self.sc.get_chat_log(),
-                               chat_users=self.sc.chat_user_alive(self.get_current_user().nick,
-                                                                  cherrypy.request.remote.ip) )
+                               chat_users=self.sc.chat_user_alive(self.current_user.nick,
+                                                                  cherrypy.request.remote.ip))
         else:
             tmpl = env.get_template('chat_room.html')
-            return tmpl.render(ke_data=ke_data)
+            return tmpl.render(ke_data=self.ke_data)
 
 if __name__ == "__main__":
     cherrypy.quickstart(Portada(), config=cp_config)

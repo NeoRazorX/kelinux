@@ -17,6 +17,15 @@ textarea {
 h1 {
     text-align: center;
     font-variant: small-caps;
+    margin-top: 5px;
+    margin-bottom: 10px;
+}
+
+h2 {
+    font-variant: small-caps;
+    border-bottom: 1px dotted silver;
+    margin-top: 5px;
+    margin-bottom: 10px;
 }
 
 input[type='submit'], input[type='button'] {
@@ -157,7 +166,6 @@ div.popup {
     left: 0px;
     z-index: 3;
     width: 50%;
-    height: 50%;
     padding: 5px;
     background-color: #f1f1f1;
     border: 1px solid #bbbbbb;
@@ -220,12 +228,20 @@ div.error {
     text-align: center;
 }
 
+div.error:first-letter {
+    text-transform: capitalize;
+}
+
 div.listado div.elemento {
     width: 150px;
     display: inline-block;
 }
 
-div.redondeado {
+div.listado div.elemento:hover {
+    background-color: #D8DFEA;
+}
+
+div.redondeado, div.redondeado2 {
     background-color: white;
     border: 1px solid silver;
     border-top-left-radius: 5px 5px;
@@ -233,14 +249,21 @@ div.redondeado {
     border-bottom-left-radius: 5px 5px;
     border-bottom-right-radius: 5px 5px;
     padding: 5px;
-    display: table;
     margin-left: auto;
     margin-right: auto;
+    margin-bottom: 10px;
+}
+
+div.redondeado2 {
+    display: table;
 }
 
 div.chat_msg {
-    border-bottom: 1px solid silver;
     padding: 5px;
+}
+
+div.chat_msg:hover {
+    background-color: #D8DFEA;
 }
 
 div.chat_msg span.nick {
@@ -251,6 +274,13 @@ div.chat_msg span.nick {
 div.chat_msg span.fecha {
     float: right;
     padding-left: 10px;
+}
+
+div.reward {
+    float: left;
+    font-size: 22px;
+    padding: 5px;
+    margin-right: 5px;
 }
 
 table#chat_form_table {

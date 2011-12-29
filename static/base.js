@@ -5,7 +5,7 @@ function mostrar_popup(idp)
     th = window.innerHeight;
     popup = document.getElementById(idp);
     popup.style.left = tw/4+'px';
-    popup.style.top = th/4+'px';
+    popup.style.top = '100px';
     popup.style.display = 'block';
 }
 

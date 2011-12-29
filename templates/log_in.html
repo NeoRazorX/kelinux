@@ -1,0 +1,88 @@
+{% include "header.html" %}
+
+{% if not ke_data.user.logged_on %}
+<table width="100%">
+<tr>
+<td valign="top">
+    <h1>Iniciar sesión:</h1>
+    <div class="redondeado2">
+    <form action="/log_in" method="POST">
+    <input type="hidden" name="option" value="log_in"/>
+    <table>
+        <tr>
+            <td align="right">Email:</td>
+            <td><input type="text" name="email" size="20" maxlength="50" value="{{ ke_data.user.email }}"/></td>
+        </tr>
+        <tr>
+            <td align="right">Contraseña:</td>
+            <td><input type="password" name="passwd" size="20" maxlength="20"/></td>
+        </tr>
+        <tr>
+            <td colspan="2" align="right"><input type="submit" value="entrar"/></td>
+        </tr>
+    </table>
+    </form>
+    </div>
+</td>
+<td valign="top">
+    <h1>Registrar:</h1>
+    <div class="redondeado2">
+    <form action="/log_in" method="POST">
+    <input type="hidden" name="option" value="register"/>
+    <table>
+        <tr>
+            <td align="right">Email:</td>
+            <td><input type="text" name="email" size="20" maxlength="50" value="{{ ke_data.user.email }}"/></td>
+            <td align="right">Nick:</td>
+            <td><input type="text" name="nick" size="20" maxlength="16" value="{{ ke_data.user.nick }}"/></td>
+        </tr>
+        <tr>
+            <td align="right">Contraseña:</td>
+            <td><input type="password" name="passwd" size="20" maxlength="20"/></td>
+            <td align="right">Repetir contraseña:</td>
+            <td><input type="password" name="passwd2" size="20" maxlength="20"/></td>
+        </tr>
+        <tr>
+            <td colspan="4" align="right"><input type="submit" value="registrar"/></td>
+        </tr>
+    </table>
+    </form>
+    </div>
+</td>
+</tr>
+</table>
+{% else %}
+<table width="100%">
+<tr>
+<td valign="top">
+    <h1>Datos de usuario:</h1>
+    <div class="redondeado2">
+    <form action="/log_in" method="POST">
+        <input type="hidden" name="option" value="update"/>
+        Email: <input type="text" name="email" size="20" maxlength="50" value="{{ ke_data.user.email }}"/>
+        Nick: <input type="text" name="nick" size="20" maxlength="16" value="{{ ke_data.user.nick }}"/><br/>
+        Contraseña: <input type="password" name="passwd" size="20" maxlength="20"/>
+        Nueva contraseña: <input type="password" name="npasswd" size="20" maxlength="20"/>
+        Repetir nueva contraseña: <input type="password" name="npasswd2" size="20" maxlength="20"/><br/>
+        <div align="right"><input type="submit" value="modificar"/></div>
+    </form>
+    </div>
+</td>
+<td valign="top" align="center">
+    <h1>Salir:</h1>
+    <div class="redondeado2">
+        Cada vez que abandonas esta web<br/>
+        apagamos el servidor,<br/>
+        lo desmontamos y lo destruimos ...<br/>
+        ¡Cuesta mucho dinero!<br/><br/>
+        <form action="/log_in" method="POST">
+            <input type="hidden" name="option" value="log_out"/>
+            <input type="submit" value="cerrar sesión"/>
+        </form>
+    </div>
+</td>
+</tr>
+</table>
+{% endif %}
+
+{% include "footer.html" %}

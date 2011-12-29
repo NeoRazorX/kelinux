@@ -31,9 +31,9 @@
     <br/><br/>
     <ul>
         {% if ke_data.user.logged_on %}
-        <li {{ "loggin"|resaltar_pagina(ke_data.rpage) }}><a href="/loggin">{{ ke_data.user.nick }}</a></li>
+        <li {{ "log_in"|resaltar_pagina(ke_data.rpage) }}><a href="/log_in">{{ ke_data.user.nick }}</a></li>
         {% else %}
-        <li {{ "loggin"|resaltar_pagina(ke_data.rpage) }}><a href="/loggin">iniciar sesión</a></li>
+        <li {{ "log_in"|resaltar_pagina(ke_data.rpage) }}><a href="/log_in">iniciar sesión</a></li>
         {% endif %}
     </ul>
     <ul>
@@ -54,17 +54,26 @@
     <div class="opciones" id="o_crear">
     <a class="opcion" id="b_crear_comunidad" href="#" onclick="seleccionar_opcion('o_crear', 'b_crear_comunidad', 'f_crear_comunidad')">comunidad</a>
     <a class="opcion" id="b_crear_pregunta" href="#" onclick="seleccionar_opcion('o_crear', 'b_crear_pregunta', 'f_crear_pregunta')">pregunta</a>
-    <a class="opcion" id="b_crear_pagina" href="#" onclick="seleccionar_opcion('o_crear', 'b_crear_pagina', 'f_crear_pagina')">página</a>
-    <a class="opcion" id="b_crear_nota" href="#" onclick="seleccionar_opcion('o_crear', 'b_crear_nota', 'f_crear_nota')">nota</a>
     </div>
     <div class="oculto" id="f_crear_comunidad">
     {% if ke_data.user.logged_on %}
+    <table width="100%">
     <form action="/community_list" method="POST">
-        Nombre de la comunidad: <input type="text" name="name" value="" maxlength="20"/>
-        <input type="submit" value="crear"/>
+        <tr>
+            <td align="right">Nombre de la comunidad:</td>
+            <td><input type="text" name="name" value="" maxlength="20"/></td>
+        </tr>
+        <tr>
+            <td align="right">Descripción:</td>
+            <td><input type="text" name="description" value="" size="60" maxlength="200"/></td>
+        </tr>
+        <tr>
+            <td colspan="2" align="right"><input type="submit" value="crear"/></td>
+        </tr>
     </form>
+    </table>
     {% else %}
-        <div class="error">Debes estar <a href="/loggin">registrado</a> para esto.</div>
+        <div class="error">Debes estar <a href="/log_in">registrado</a> para esto.</div>
     {% endif %}
     </div>
     <div class="oculto" id="f_crear_pregunta">
@@ -73,33 +82,12 @@
         {% if not ke_data.user.logged_on %}
         Tu email: <input type="text" name="email" size="20" maxlength="50" value=""/>
         {% endif %}
-        <input type="submit" value="crear"/>
+        <div align="right"><input type="submit" value="crear"/></div>
     </form>
-    </div>
-    <div class="oculto" id="f_crear_pagina">
-    {% if ke_data.user.logged_on %}
-    <form>
-        Título de la página: <input type="text" name="titulo" value="titulo"/>
-        <textarea rows="10">Escribe el contenido de la página...</textarea>
-        <input type="submit" value="crear"/>
-    </form>
-    {% else %}
-        <div class="error">Debes estar <a href="/loggin">registrado</a> para esto.</div>
-    {% endif %}
-    </div>
-    <div class="oculto" id="f_crear_nota">
-    {% if ke_data.user.logged_on %}
-    <form>
-        <textarea rows="10">Escribe tu nota...</textarea>
-        <input type="submit" value="crear"/>
-    </form>
-    {% else %}
-        <div class="error">Debes estar <a href="/loggin">registrado</a> para esto.</div>
-    {% endif %}
     </div>
 </div>
 
 <div id="cuerpo"/>
-{% if error_msg %}
-<div class="error">{{ error_msg }}</div>
+{% if ke_data.errormsg %}
+<div class="error">{{ ke_data.errormsg }}</div>
 {% endif %}

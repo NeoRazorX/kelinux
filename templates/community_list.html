@@ -2,12 +2,16 @@
 
 <h1>Lista de comunidades</h1>
 
-<div class="redondeado">
-<div class="listado">
-    {% for c in community_list %}
-        <div class="elemento">{{ c.name }}</div>
-    {% endfor %}
-</div>
-</div>
+{% if not community_list %}
+    <div class="error">Nada que mostrar :(</div>
+{% else %}
+    <div class="redondeado2">
+        <div class="listado">
+        {% for c in community_list %}
+            <div class="elemento">{{ c.name }}</div>
+        {% endfor %}
+    </div>
+    </div>
+{% endif %}
 
 {% include "footer.html" %}
