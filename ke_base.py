@@ -15,8 +15,9 @@ Base = declarative_base()
 Ke_engine = create_engine("mysql://%s:%s@%s:%s/%s" % (MYSQL_USER, MYSQL_PASS, MYSQL_HOST, MYSQL_PORT, MYSQL_DBNAME),
                           encoding='utf-8', convert_unicode=True, echo=APP_DEBUG)
 
-# Iniciamos la sesión QUE DEBEMOS INSTANCIAR cada vez que queramos hablar con la base de datos
-Ke_session = sessionmaker(bind=Ke_engine)
+# Iniciamos la sesión con la base de datos
+sql_session = sessionmaker(bind=Ke_engine)
+Ke_session = sql_session()
 
 # clase de usuario ya mapeada con sqlalchemy
 class Ke_user(Base):
@@ -92,6 +93,12 @@ class Ke_user(Base):
             self.points += v
             if self.points < 0:
                 self.points = 0
+    
+    def get_link(self, full=False):
+        if full:
+            return APPDOMAIN+'/user/'+str(self.id)
+        else:
+            return '/user/'+str(self.id)
 
 
 # clase de comunidad ya mapeada con sqlalchemy
@@ -133,6 +140,12 @@ class Ke_community(Base):
             return True
         else:
             return False
+    
+    def get_link(self, full=False):
+        if full:
+            return APPDOMAIN+'/community/'+self.name
+        else:
+            return '/community/'+self.name
 
 
 # clase de pregunta ya mapeada con sqlalchemy
@@ -187,9 +200,7 @@ class Ke_question(Base):
     def get_user(self):
         user = Ke_user()
         if self.user_id != 0:
-            session = Ke_session()
-            user2 = session.query(Ke_user).filter_by(id=self.user_id).first()
-            session.close()
+            user2 = Ke_session.query(Ke_user).filter_by(id=self.user_id).first()
             try:
                 if user2.exists():
                     user = user2
@@ -235,6 +246,12 @@ class Ke_question(Base):
             v = 0
         if v > 0:
             self.reward += v
+    
+    def get_link(self, full=False):
+        if full:
+            return APPDOMAIN+'/question/'+str(self.id)
+        else:
+            return '/question/'+str(self.id)
 
 
 class Super_cache:
@@ -266,9 +283,7 @@ class Super_cache:
                     encontrado = True
                     break
             if not encontrado:
-                session = Ke_session()
-                user = session.query(Ke_user).filter_by(id=i2).first()
-                session.close()
+                user = Ke_session.query(Ke_user).filter_by(id=i2).first()
                 try:
                     if user.exists():
                         self.users.append(user)
@@ -284,9 +299,23 @@ class Super_cache:
                 encontrado = True
                 break
         if not encontrado:
-            session = Ke_session()
-            user = session.query(Ke_user).filter_by(email=email).first()
-            session.close()
+            user = Ke_session.query(Ke_user).filter_by(email=email).first()
+            try:
+                if user.exists():
+                    self.users.append(user)
+            except:
+                user = Ke_user()
+        return user
+    
+    def get_user_by_nick(self, nick):
+        encontrado = False
+        for u in self.users:
+            if u.nick == nick:
+                user = u
+                encontrado = True
+                break
+        if not encontrado:
+            user = Ke_session.query(Ke_user).filter_by(nick=nick).first()
             try:
                 if user.exists():
                     self.users.append(user)
@@ -295,10 +324,7 @@ class Super_cache:
         return user
     
     def get_all_users(self):
-        session = Ke_session()
-        users = session.query(Ke_user).order_by(Ke_user.nick).all()
-        session.close()
-        return users
+        return Ke_session.query(Ke_user).order_by(Ke_user.nick).all()
     
     def get_community_by_name(self, n):
         encontrado = False
@@ -308,9 +334,7 @@ class Super_cache:
                 encontrado = True
                 break
         if not encontrado:
-            session = Ke_session()
-            community = session.query(Ke_community).filter_by(name=n).first()
-            session.close()
+            community = Ke_session.query(Ke_community).filter_by(name=n).first()
             try:
                 if community.exists():
                     self.communities.append(community)
@@ -319,10 +343,7 @@ class Super_cache:
         return community
     
     def get_all_communities(self):
-        session = Ke_session()
-        communities = session.query(Ke_community).order_by(Ke_community.name).all()
-        session.close()
-        return communities
+        return Ke_session.query(Ke_community).order_by(Ke_community.name).all()
     
     def get_question_by_id(self, i):
         try:
@@ -339,9 +360,7 @@ class Super_cache:
                     encontrado = True
                     break
             if not encontrado:
-                session = Ke_session()
-                questions = session.query(Ke_question).filter_by(id=i2).first()
-                session.close()
+                question = Ke_session.query(Ke_question).filter_by(id=i2).first()
                 try:
                     if question.exists():
                         self.questions.append(question)
@@ -350,16 +369,10 @@ class Super_cache:
         return question
     
     def get_all_questions(self):
-        session = Ke_session()
-        questions = session.query(Ke_question).order_by(Ke_question.id.desc()).all()
-        session.close()
-        return questions
+        return Ke_session.query(Ke_question).order_by(Ke_question.id.desc()).all()
     
     def get_front(self):
-        session = Ke_session()
-        questions = session.query(Ke_question).order_by(Ke_question.id.desc())[0:20]
-        session.close()
-        return questions
+        return Ke_session.query(Ke_question).order_by(Ke_question.id.desc())[0:20]
     
     def get_chat_log(self):
         return self.chat_log
@@ -435,15 +448,14 @@ class Ke_web:
         elif passwd == '':
             self.ke_data['errormsg'] = u'introduce la contraseña'
         else:
-            user = self.sc.get_user_by_email(email)
-            if not user.exists():
+            user = Ke_session.query(Ke_user).filter_by(email=email).first()
+            if not user:
                 self.ke_data['errormsg'] = 'usuario no encontrado'
             elif user.password == hashlib.sha1(passwd).hexdigest():
-                session = Ke_session()
                 user.new_log_key()
+                Ke_session.add(user)
+                Ke_session.commit()
                 self.set_current_user(user)
-                session.commit()
-                session.close()
                 self.set_cookie('user_id', user.id)
                 self.set_cookie('log_key', user.log_key)
                 raise cherrypy.HTTPRedirect('/')
@@ -480,7 +492,6 @@ class Ke_web:
             if user.exists():
                 self.ke_data['errormsg'] = 'el usuario ya existe, elige otro email'
             else:
-                session = Ke_session()
                 user = Ke_user()
                 if not user.set_email(email):
                     self.ke_data['errormsg'] = u'el email no es válido'
@@ -494,13 +505,12 @@ class Ke_web:
                     try:
                         user.new_log_key()
                         self.set_current_user(user)
-                        session.add(user)
-                        session.commit()
+                        Ke_session.add(user)
+                        Ke_session.commit()
                         self.set_cookie('user_id', user.id)
                         self.set_cookie('log_key', user.log_key)
                     except:
                         self.ke_data['errormsg'] = 'error al guardar el usuario en la base de datos'
-                session.close()
             if not self.ke_data['errormsg']:
                 raise cherrypy.HTTPRedirect('/')
     
@@ -513,7 +523,7 @@ class Ke_web:
         community = Ke_community()
         if n == '':
             self.ke_data['errormsg'] = 'introduce un nombre para la comunidad'
-        if d == '':
+        elif d == '':
             self.ke_data['errormsg'] = u'introduce una descripción para la comunidad'
         else:
             community = self.sc.get_community_by_name(n)
@@ -526,10 +536,8 @@ class Ke_web:
                     self.ke_data['errormsg'] = u'introduce una descripción válida'
                 else:
                     try:
-                        session = Ke_session()
-                        session.add(community)
-                        session.commit()
-                        session.close()
+                        Ke_session.add(community)
+                        Ke_session.commit()
                     except:
                         self.ke_data['errormsg'] = 'error al guardar la comunidad en la base de datos'
         return community
@@ -545,10 +553,8 @@ class Ke_web:
                 self.ke_data['errormsg'] = u'usuario no válido: '+self.current_user.nick
             else:
                 try:
-                    session = Ke_session()
-                    session.add(question)
-                    session.commit()
-                    session.close()
+                    Ke_session.add(question)
+                    Ke_session.commit()
                 except:
                     self.ke_data['errormsg'] = 'error al guardar la pregunta en la base de datos'
         return question

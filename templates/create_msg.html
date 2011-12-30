@@ -1,0 +1,19 @@
+{% if option == 'community' %}
+    {% if ke_data.errormsg %}
+        <div class="error">{{ ke_data.errormsg }}</div>
+    {% else %}
+        <div class="message">
+            redireccionando a <a id="jump_2_this_link" href="{{ community.get_link() }}">{{ community.get_link() }}</a> ...
+        </div>
+    {% endif %}
+{% endif %}
+
+{% if option == 'question' %}
+    {% if ke_data.errormsg %}
+        <div class="error">{{ ke_data.errormsg }}</div>
+    {% else %}
+        <div class="message">
+            redireccionando a <a id="jump_2_this_link" href="{{ question.get_link() }}">{{ question.get_link() }}</a> ...
+        </div>
+    {% endif %}
+{% endif %}

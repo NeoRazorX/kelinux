@@ -2,24 +2,24 @@
 
 {% if ke_data.user.logged_on %}
     <h1>Hola {{ ke_data.user.nick }}!</h1>
-    <div class="redondeado2">
+    <div class="rounded2">
         Tienes <b>{{ ke_data.user.points }}</b> puntos. Los puntos son necesarios para <b>votar las respuestas</b>, y sobre todo,
         para <b>añadirlos</b> a la <b>recompensa de cada pregunta</b>.<br/>
         Las preguntas con una recompensa más alta son más visibles, y el usuario que las resuelve obtiene esa recompensa en puntos.
     </div>
     {% if community_list %}
-        <div class="redondeado2">
+        <div class="rounded2">
             <h2>Únete a una comunidad:</h2>
-            <div class="listado">
+            <div class="d_list">
             {% for c in community_list %}
-                <div class="elemento">{{ c.name }}</div>
+                <div class="element" onclick="jump2url('{{ c.get_link() }}')">{{ c.name }}</div>
             {% endfor %}
         </div>
         </div>
     {% endif %}
 {% else %}
     <h1>Bienvenido a Kelinux.net</h1>
-    <div class="redondeado2">
+    <div class="rounded2">
         Kelinux.net es una red solical que tiene como misión <b>solucionar todos los problemas que puedas tener con Linux</b>,
         con <b>cualquier distribución</b>: Ubuntu, Linux Mint, Debian, Fedora, OpenSuSE ... y <b>sin importar cuanto sepas de
         informática</b>!<br/><br/>
@@ -31,10 +31,10 @@
     {% if not community_list %}
         <div class="error">Nada que mostrar :(</div>
     {% else %}
-        <div class="redondeado2">
-            <div class="listado">
+        <div class="rounded2">
+            <div class="d_list">
             {% for c in community_list %}
-                <div class="elemento">{{ c.name }}</div>
+                <div class="element" onclick="jump2url('{{ c.get_link() }}')">{{ c.name }}</div>
             {% endfor %}
         </div>
         </div>
@@ -44,12 +44,12 @@
 {% if not question_list %}
     <div class="error">Nada que mostrar :(</div>
 {% else %}
-    <div class="redondeado">
+    <div class="rounded">
     {% for q in question_list %}
         <div class="reward">{{ q.reward }}</div>
-        <div class="chat_msg">
+        <div class="chat_msg" onclick="jump2url('{{ q.get_link() }}')">
             <span class="nick">{{ q.get_user().nick }}</span>
-            <span class="fecha">estado: {{ q.get_status() }} &nbsp; {{ q.created|timesince }}</span>
+            <span class="date">estado: {{ q.get_status() }} &nbsp; {{ q.created|timesince }}</span>
             <br/>
             {{ q.get_resume() }}
         </div>

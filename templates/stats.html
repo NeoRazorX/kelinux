@@ -1,21 +1,21 @@
 {% include "header.html" %}
 
 <h1>Estadísticas</h1>
-<div class="redondeado2">
-<div class="listado">
-    <div class="elemento">Uptime: {{ ke_data.stats.uptime|timesince }}</div>
-    <div class="elemento">Páginas servidas: {{ ke_data.stats.served_pages }}</div>
+<div class="rounded2">
+<div class="d_list">
+    <div class="element">Uptime: {{ ke_data.stats.uptime|timesince }}</div>
+    <div class="element">Páginas servidas: {{ ke_data.stats.served_pages }}</div>
 </div>
 </div>
 
 <br/>
 
 <h1>Datos en memoria:</h1>
-<div class="redondeado2">
-<div class="listado">
-    <div class="elemento">Usuarios: {{ ke_data.stats.users }}</div>
-    <div class="elemento">Comunidades: {{ ke_data.stats.communities }}</div>
-    <div class="elemento">Preguntas: {{ ke_data.stats.questions }}</div>
+<div class="rounded2">
+<div class="d_list">
+    <div class="element">Usuarios: {{ ke_data.stats.users }}</div>
+    <div class="element">Comunidades: {{ ke_data.stats.communities }}</div>
+    <div class="element">Preguntas: {{ ke_data.stats.questions }}</div>
 </div>
 </div>
 

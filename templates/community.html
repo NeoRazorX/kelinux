@@ -1,0 +1,14 @@
+{% include "header.html" %}
+
+{% if not community %}
+    <div class="error">Comunidad no encontrada</div>
+{% else %}
+    <div class="rounded">
+        <h2>{{ community.name }}</h2>
+        {{ community.description }}
+        <br/>
+        Usuarios: {{ community.num_users }}
+    </div>
+{% endif %}
+
+{% include "footer.html" %}

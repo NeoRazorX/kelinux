@@ -22,9 +22,9 @@ def timesince(t):
             break
     return time_str
 
-def resaltar_pagina(name, selection=''):
+def highlight_page(name, selection=''):
     if name == selection:
-        return "class='seleccionado'"
+        return "class='selected'"
     else:
         return ''
 

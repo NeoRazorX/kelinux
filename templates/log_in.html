@@ -5,7 +5,7 @@
 <tr>
 <td valign="top">
     <h1>Iniciar sesión:</h1>
-    <div class="redondeado2">
+    <div class="rounded2">
     <form action="/log_in" method="POST">
     <input type="hidden" name="option" value="log_in"/>
     <table>
@@ -18,7 +18,7 @@
             <td><input type="password" name="passwd" size="20" maxlength="20"/></td>
         </tr>
         <tr>
-            <td colspan="2" align="right"><input type="submit" value="entrar"/></td>
+            <td colspan="2"><div class="d_right"><input type="submit" value="entrar"/></div></td>
         </tr>
     </table>
     </form>
@@ -26,7 +26,7 @@
 </td>
 <td valign="top">
     <h1>Registrar:</h1>
-    <div class="redondeado2">
+    <div class="rounded2">
     <form action="/log_in" method="POST">
     <input type="hidden" name="option" value="register"/>
     <table>
@@ -43,7 +43,7 @@
             <td><input type="password" name="passwd2" size="20" maxlength="20"/></td>
         </tr>
         <tr>
-            <td colspan="4" align="right"><input type="submit" value="registrar"/></td>
+            <td colspan="4"><div class="d_right"><input type="submit" value="registrar"/></div></td>
         </tr>
     </table>
     </form>
@@ -56,7 +56,7 @@
 <tr>
 <td valign="top">
     <h1>Datos de usuario:</h1>
-    <div class="redondeado2">
+    <div class="rounded2">
     <form action="/log_in" method="POST">
         <input type="hidden" name="option" value="update"/>
         Email: <input type="text" name="email" size="20" maxlength="50" value="{{ ke_data.user.email }}"/>
@@ -64,13 +64,13 @@
         Contraseña: <input type="password" name="passwd" size="20" maxlength="20"/>
         Nueva contraseña: <input type="password" name="npasswd" size="20" maxlength="20"/>
         Repetir nueva contraseña: <input type="password" name="npasswd2" size="20" maxlength="20"/><br/>
-        <div align="right"><input type="submit" value="modificar"/></div>
+        <div class="d_right"><input type="submit" value="modificar"/></div>
     </form>
     </div>
 </td>
-<td valign="top" align="center">
+<td valign="top">
     <h1>Salir:</h1>
-    <div class="redondeado2">
+    <div class="rounded2">
         Cada vez que abandonas esta web<br/>
         apagamos el servidor,<br/>
         lo desmontamos y lo destruimos ...<br/>

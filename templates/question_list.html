@@ -5,12 +5,12 @@
 {% if not question_list %}
     <div class="error">Nada que mostrar :(</div>
 {% else %}
-    <div class="redondeado">
+    <div class="rounded">
     {% for q in question_list %}
         <div class="reward">{{ q.reward }}</div>
-        <div class="chat_msg">
+        <div class="chat_msg" onclick="jump2url('{{ q.get_link() }}')">
             <span class="nick">{{ q.get_user().nick }}</span>
-            <span class="fecha">estado: {{ q.get_status() }} &nbsp; {{ q.created|timesince }}</span>
+            <span class="date">estado: {{ q.get_status() }} &nbsp; {{ q.created|timesince }}</span>
             <br/>
             {{ q.get_resume() }}
         </div>

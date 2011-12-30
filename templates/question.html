@@ -1,0 +1,17 @@
+{% include "header.html" %}
+
+{% if not question %}
+    <div class="error">Pregunta no encontrada</div>
+{% else %}
+    <div class="rounded">
+        <div class="reward">{{ question.reward }}</div>
+        <div class="chat_msg">
+            <span class="nick">{{ question.get_user().nick }}</span>
+            <span class="date">estado: {{ question.get_status() }} &nbsp; {{ question.created|timesince }}</span>
+            <br/>
+            {{ question.text }}
+        </div>
+    </div>
+{% endif %}
+
+{% include "footer.html" %}

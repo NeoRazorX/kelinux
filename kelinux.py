@@ -18,7 +18,7 @@ env = Environment(loader=FileSystemLoader('templates'))
 
 # añadimos los filtros personalizados
 env.filters['timesince'] = timesince
-env.filters['resaltar_pagina'] = resaltar_pagina
+env.filters['highlight_page'] = highlight_page
 
 # definimos la configuración de cherrypy
 cp_config = {
@@ -41,7 +41,7 @@ cp_config = {
     }
 }
 
-class Portada(Ke_web):
+class Main_web(Ke_web):
     @cherrypy.expose
     def index(self):
         self.first_step('index')
@@ -49,6 +49,12 @@ class Portada(Ke_web):
         return tmpl.render(question_list=self.sc.get_front(),
                            community_list=self.sc.get_all_communities(),
                            ke_data=self.ke_data)
+    
+    @cherrypy.expose
+    def default(self, attr=''):
+        self.first_step('error')
+        tmpl = env.get_template('error.html')
+        return tmpl.render(ke_data=self.ke_data)
     
     @cherrypy.expose
     def log_in(self, option='', email='', nick='', passwd='', passwd2=''):
@@ -64,34 +70,63 @@ class Portada(Ke_web):
         return tmpl.render(ke_data=self.ke_data)
     
     @cherrypy.expose
+    def create(self, option='', name='', description='', text=''):
+        self.first_step('create_msg')
+        tmpl = env.get_template('create_msg.html')
+        if cherrypy.request.method == 'POST':
+            if option == 'community':
+                return tmpl.render(community=self.new_community(name, description),
+                                   ke_data=self.ke_data,
+                                   option='community')
+            elif option == 'question':
+                return tmpl.render(question=self.new_question(text),
+                                   ke_data=self.ke_data,
+                                   option='question')
+            else:
+                raise cherrypy.HTTPRedirect('/')
+        else:
+            raise cherrypy.HTTPRedirect('/')
+    
+    @cherrypy.expose
     def community_list(self, name='', description=''):
         self.first_step('community_list')
         tmpl = env.get_template('community_list.html')
-        if cherrypy.request.method == 'POST':
-            return tmpl.render(community=self.new_community(name, description),
-                               community_list=self.sc.get_all_communities(),
-                               ke_data=self.ke_data)
-        else:
-            return tmpl.render(community_list=self.sc.get_all_communities(),
-                               ke_data=self.ke_data)
+        return tmpl.render(community_list=self.sc.get_all_communities(),
+                           ke_data=self.ke_data)
+    
+    @cherrypy.expose
+    def community(self, name=''):
+        self.first_step('community')
+        tmpl = env.get_template('community.html')
+        return tmpl.render(community=self.sc.get_community_by_name(name),
+                           ke_data=self.ke_data)
     
     @cherrypy.expose
     def question_list(self, text='', email=''):
         self.first_step('question_list')
         tmpl = env.get_template('question_list.html')
-        if cherrypy.request.method == 'POST':
-            return tmpl.render(question=self.new_question(text),
-                               question_list=self.sc.get_all_questions(),
-                               ke_data=self.ke_data)
-        else:
-            return tmpl.render(question_list=self.sc.get_all_questions(),
-                               ke_data=self.ke_data)
+        return tmpl.render(question_list=self.sc.get_all_questions(),
+                           ke_data=self.ke_data)
+    
+    @cherrypy.expose
+    def question(self, idq=''):
+        self.first_step('question')
+        tmpl = env.get_template('question.html')
+        return tmpl.render(question=self.sc.get_question_by_id(idq),
+                           ke_data=self.ke_data)
     
     @cherrypy.expose
     def user_list(self):
         self.first_step('user_list')
         tmpl = env.get_template('user_list.html')
         return tmpl.render(user_list=self.sc.get_all_users(),
+                           ke_data=self.ke_data)
+    
+    @cherrypy.expose
+    def user(self, idu=''):
+        self.first_step('user')
+        tmpl = env.get_template('user.html')
+        return tmpl.render(user=self.sc.get_user_by_id(idu),
                            ke_data=self.ke_data)
     
     @cherrypy.expose
@@ -116,4 +151,5 @@ class Portada(Ke_web):
             return tmpl.render(ke_data=self.ke_data)
 
 if __name__ == "__main__":
-    cherrypy.quickstart(Portada(), config=cp_config)
+    cherrypy.quickstart(Main_web(), config=cp_config)
+    Ke_session.close()

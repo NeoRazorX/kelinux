@@ -1,0 +1,11 @@
+{% include "header.html" %}
+
+{% if not user %}
+    <div class="error">Usuario no encontrado</div>
+{% else %}
+    <div class="rounded">
+        <h2>{{ user.nick }}</h2>
+    </div>
+{% endif %}
+
+{% include "footer.html" %}

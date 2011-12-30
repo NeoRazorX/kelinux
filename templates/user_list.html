@@ -5,10 +5,10 @@
 {% if not user_list %}
     <div class="error">Nada que mostrar :(</div>
 {% else %}
-    <div class="redondeado2">
-        <div class="listado">
+    <div class="rounded2">
+        <div class="d_list">
             {% for u in user_list %}
-                <div class="elemento">{{ u.nick }}</div>
+                <div class="element" onclick="jump2url('{{ u.get_link() }}')">{{ u.nick }}</div>
             {% endfor %}
         </div>
     </div>

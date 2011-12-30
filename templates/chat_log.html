@@ -3,11 +3,11 @@
 <table>
 <tr>
     <td>
-    <div class="redondeado">
+    <div class="rounded">
         {% for c in chat_log %}
         <div class="chat_msg">
             <span class="nick">{{ c[1] }}</span>
-            <span class="fecha">{{ c[0]|timesince }}</span>
+            <span class="date">{{ c[0]|timesince }}</span>
             <br/>
             {{ c[2] }}
         </div>
@@ -15,7 +15,7 @@
     </div>
     </td>
     <td id="chat_user_list">
-    <div class="redondeado2">
+    <div class="rounded2">
         <b>Usuarios:</b><br/>
         {% for u in chat_users %}
         {{ u[1] }}<br/>

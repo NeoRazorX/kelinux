@@ -39,7 +39,12 @@ input[type='submit'], input[type='button'] {
     border-bottom-right-radius: 2px 2px;
 }
 
-table#menu_cabecera {
+input[type='submit']:hover, input[type='button']:hover {
+    background-color: #4A8BF5;
+    color: white;
+}
+
+table#header_menu {
     position: fixed;
     top: 0px;
     width: 100%;
@@ -48,7 +53,7 @@ table#menu_cabecera {
     border-bottom: 1px dotted #cccccc;
 }
 
-table#menu_cabecera td#logo {
+table#header_menu td#logo {
     font-size: 20px;
     text-align: center;
     text-transform: capitalize;
@@ -56,30 +61,30 @@ table#menu_cabecera td#logo {
     width: 150px;
 }
 
-table#menu_cabecera td#logo a {
+table#header_menu td#logo a {
     color: black;
 }
 
-table#menu_cabecera td#buscador {
+table#header_menu td#finder {
     padding-left: 10px;
 }
 
-table#menu_cabecera td#buscador input#b_buscar {
+table#header_menu td#finder input#b_find {
     background-color: #4A8BF5;
     color: white;
     border: 0px solid #4A8BF5;
 }
 
-table#menu_cabecera td#stats {
+table#header_menu td#stats {
     text-align: right;
     font-size: 12px;
 }
 
-table#menu_cabecera td#stats span {
+table#header_menu td#stats span {
     padding-right: 10px;
 }
 
-div#menu_izquierda {
+div#left_menu {
     position: fixed;
     top: 45px;
     left: 0px;
@@ -92,7 +97,7 @@ div#menu_izquierda {
     border-right: 1px dotted #cccccc;
 }
 
-div#menu_izquierda a#b_crear {
+div#left_menu a#b_create {
     background-color: #D74937;
     color: white;
     font-weight: bold;
@@ -109,35 +114,31 @@ div#menu_izquierda a#b_crear {
     border-bottom-right-radius: 2px 2px;
 }
 
-div#menu_izquierda ul {
+div#left_menu ul {
     text-align: left;
     list-style-type: none;
     padding-left: 5px;
     padding-right: 5px;
 }
 
-div#menu_izquierda li:hover {
-    background-color: #D8DFEA;
-}
-
-div#menu_izquierda li.seleccionado {
-    background-color: #4A8BF5;
-    color: white;
-}
-
-div#menu_izquierda li.seleccionado a {
-    color: white;
-}
-
-div#menu_izquierda ul a {
-    text-decoration: none;
+div#left_menu ul li {
     text-transform: capitalize;
     color: black;
     font-size: 15px;
     padding-left: 5px;
 }
 
-div#cuerpo {
+div#left_menu li:hover {
+    background-color: #D8DFEA;
+    cursor: pointer;
+}
+
+div#left_menu li.selected {
+    background-color: #4A8BF5;
+    color: white;
+}
+
+div#main_div {
     position: fixed;
     top: 45px;
     left: 155px;
@@ -147,7 +148,7 @@ div#cuerpo {
     padding: 5px;
 }
 
-div#caja_sombra {
+div#shadow_box {
     position: fixed;
     top: 0px;
     left: 0px;
@@ -169,6 +170,10 @@ div.popup {
     padding: 5px;
     background-color: #f1f1f1;
     border: 1px solid #bbbbbb;
+    border-top-left-radius: 5px 5px;
+    border-top-right-radius: 5px 5px;
+    border-bottom-left-radius: 5px 5px;
+    border-bottom-right-radius: 5px 5px;
     box-shadow: 10px 10px 10px #333;
     display: none;
     overflow: auto;
@@ -181,43 +186,58 @@ div.popup h1 {
     color: #222222;
 }
 
-div.popup a.b_cerrar {
+div.popup a.b_close {
     float: right;
     text-decoration: none;
     font-weight: bold;
     color: #222222;
 }
 
-div.opciones {
+div.d_options {
+    display: table;
     text-align: center;
     font-size: 18px;
-    border-bottom: 1px solid #666666;
+    padding: 2px;
     margin-top: 10px;
     margin-bottom: 10px;
+    margin-left: auto;
+    margin-right: auto;
+    background-color: #333333;
+    border: 1px solid #333333;
+    border-top-left-radius: 5px 5px;
+    border-top-right-radius: 5px 5px;
+    border-bottom-left-radius: 5px 5px;
+    border-bottom-right-radius: 5px 5px;
 }
 
-div.opciones a.opcion, div.opciones a.opcion_s {
+div.d_options a.option, div.d_options a.option_s {
     padding-left: 5px;
     padding-right: 5px;
-    color: black;
-    text-decoration: none;
-    border: 1px solid #f1f1f1;
-}
-
-div.opciones a.opcion:hover {
-    background-color: #cccccc;
-    border: 1px solid #666666;
-    border-bottom: 1px solid #cccccc;
-}
-
-div.opciones a.opcion_s {
-    background-color: #666666;
     color: white;
-    border: 1px solid #666666;
+    text-decoration: none;
+    border-top-left-radius: 2px 2px;
+    border-top-right-radius: 2px 2px;
+    border-bottom-left-radius: 2px 2px;
+    border-bottom-right-radius: 2px 2px;
 }
 
-div.oculto {
+div.d_options a.option:hover {
+    background-color: #D8DFEA;
+    color: black;
+    cursor: pointer;
+}
+
+div.d_options a.option_s {
+    background-color: #4A8BF5;
+}
+
+div.d_hidden {
     display: none;
+}
+
+div.d_right {
+    text-align: right;
+    margin: 5px;
 }
 
 div.error {
@@ -228,20 +248,29 @@ div.error {
     text-align: center;
 }
 
-div.error:first-letter {
+div.message {
+    background-color: #D8DFEA;
+    border: 1px solid silver;
+    padding: 10px;
+    margin: 5px;
+    text-align: center;
+}
+
+div.error:first-letter, div.message:first-letter {
     text-transform: capitalize;
 }
 
-div.listado div.elemento {
+div.d_list div.element {
     width: 150px;
     display: inline-block;
 }
 
-div.listado div.elemento:hover {
+div.d_list div.element:hover {
     background-color: #D8DFEA;
+    cursor: pointer;
 }
 
-div.redondeado, div.redondeado2 {
+div.rounded, div.rounded2 {
     background-color: white;
     border: 1px solid silver;
     border-top-left-radius: 5px 5px;
@@ -254,7 +283,7 @@ div.redondeado, div.redondeado2 {
     margin-bottom: 10px;
 }
 
-div.redondeado2 {
+div.rounded2 {
     display: table;
 }
 
@@ -264,6 +293,7 @@ div.chat_msg {
 
 div.chat_msg:hover {
     background-color: #D8DFEA;
+    cursor: pointer;
 }
 
 div.chat_msg span.nick {
@@ -271,7 +301,7 @@ div.chat_msg span.nick {
     padding-right: 10px;
 }
 
-div.chat_msg span.fecha {
+div.chat_msg span.date {
     float: right;
     padding-left: 10px;
 }
