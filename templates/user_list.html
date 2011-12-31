@@ -1,14 +1,13 @@
 {% include "header.html" %}
 
-<h1>Lista de usuarios</h1>
-
 {% if not user_list %}
     <div class="error">Nada que mostrar :(</div>
 {% else %}
     <div class="rounded2">
+        <h2>Lista de usuarios</h2>
         <div class="d_list">
             {% for u in user_list %}
-                <div class="element" onclick="jump2url('{{ u.get_link() }}')">{{ u.nick }}</div>
+                <div class="element_c" onclick="jump2url('{{ u.get_link() }}')">{{ u.nick }}</div>
             {% endfor %}
         </div>
     </div>

@@ -99,6 +99,9 @@ class Ke_user(Base):
             return APPDOMAIN+'/user/'+str(self.id)
         else:
             return '/user/'+str(self.id)
+    
+    def get_questions(self):
+        return Ke_session.query(Ke_question).filter_by(user_id=self.id).order_by(Ke_question.id.desc()).all()
 
 
 # clase de comunidad ya mapeada con sqlalchemy
@@ -388,16 +391,21 @@ class Super_cache:
         text = cgi.escape(text.strip(), True)
         self.chat_log.insert(0, [datetime.now(), nick, text])
     
-    def chat_user_alive(self, nick, ip):
+    def chat_user_alive(self, user, ip):
         encontrado = False
-        for cu in self.chat_users:
-            if cu[0] == ip and cu[1] == nick:
+        i = 0
+        while i < len(self.chat_users):
+            if self.chat_users[i][0] == ip and self.chat_users[i][1] == user:
                 encontrado = True
-                cu[2] = 20
+                self.chat_users[i][2] = 20
             else:
-                cu[2] -= 1
+                self.chat_users[i][2] -= 1
+            if self.chat_users[i][2] < 1:
+                self.chat_users.remove( self.chat_users[i] )
+            else:
+                i += 1
         if not encontrado:
-            self.chat_users.append([ip, nick, 20])
+            self.chat_users.append([ip, user, 20])
         return self.chat_users
     
     def get_stats(self):
@@ -525,6 +533,8 @@ class Ke_web:
             self.ke_data['errormsg'] = 'introduce un nombre para la comunidad'
         elif d == '':
             self.ke_data['errormsg'] = u'introduce una descripción para la comunidad'
+        elif self.current_user.points < 1:
+            self.ke_data['errormsg'] = 'no tienes suficientes puntos'
         else:
             community = self.sc.get_community_by_name(n)
             if community.exists():
@@ -537,6 +547,8 @@ class Ke_web:
                 else:
                     try:
                         Ke_session.add(community)
+                        self.current_user.sum_points(-1)
+                        Ke_session.add(self.current_user)
                         Ke_session.commit()
                     except:
                         self.ke_data['errormsg'] = 'error al guardar la comunidad en la base de datos'

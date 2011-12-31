@@ -1,14 +1,13 @@
 {% include "header.html" %}
 
-<h1>Lista de comunidades</h1>
-
 {% if not community_list %}
     <div class="error">Nada que mostrar :(</div>
 {% else %}
     <div class="rounded2">
+        <h2>Lista de comunidades</h2>
         <div class="d_list">
         {% for c in community_list %}
-            <div class="element" onclick="jump2url('{{ c.get_link() }}')">{{ c.name }}</div>
+            <div class="element_c" onclick="jump2url('{{ c.get_link() }}')">{{ c.name }}</div>
         {% endfor %}
     </div>
     </div>

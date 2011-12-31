@@ -1,9 +1,8 @@
-<div class="error">Mensajes en orden inverso. No reveles nunca tus contraseñas.</div>
-
 <table>
 <tr>
     <td>
     <div class="rounded">
+        <div class="message">Mensajes en orden inverso. No reveles nunca tus contraseñas.</div>
         {% for c in chat_log %}
         <div class="chat_msg">
             <span class="nick">{{ c[1] }}</span>
@@ -15,11 +14,13 @@
     </div>
     </td>
     <td id="chat_user_list">
-    <div class="rounded2">
-        <b>Usuarios:</b><br/>
+    <div class="rounded">
+        <h2>Usuarios:</h2>
+        <div class="d_list">
         {% for u in chat_users %}
-        {{ u[1] }}<br/>
+            <div class="element_c" onclick="jump2url('{{ u[1].get_link() }}')">{{ u[1].nick }}</div>
         {% endfor %}
+        </div>
     </div>
     </td>
 </tr>

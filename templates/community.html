@@ -5,9 +5,10 @@
 {% else %}
     <div class="rounded">
         <h2>{{ community.name }}</h2>
-        {{ community.description }}
-        <br/>
-        Usuarios: {{ community.num_users }}
+        <div class="chat_msg">
+            {{ community.description }}
+            <span class="date">Usuarios: {{ community.num_users }}</span>
+        </div>
     </div>
 {% endif %}
 

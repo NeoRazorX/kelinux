@@ -1,16 +1,17 @@
 {% include "header.html" %}
 
-<h1>Lista de preguntas</h1>
-
 {% if not question_list %}
     <div class="error">Nada que mostrar :(</div>
 {% else %}
     <div class="rounded">
+    <h2>Lista de preguntas</h2>
     {% for q in question_list %}
         <div class="reward">{{ q.reward }}</div>
-        <div class="chat_msg" onclick="jump2url('{{ q.get_link() }}')">
+        <div class="chat_msg_c" onclick="jump2url('{{ q.get_link() }}')">
             <span class="nick">{{ q.get_user().nick }}</span>
-            <span class="date">estado: {{ q.get_status() }} &nbsp; {{ q.created|timesince }}</span>
+            <span class="date">{{ q.updated|timesince }}</span>
+            <span class="tag">{{ q.num_answers }} respuestas</span>
+            <span class="tag">{{ q.get_status() }}</span>
             <br/>
             {{ q.get_resume() }}
         </div>

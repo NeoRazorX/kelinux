@@ -5,6 +5,22 @@
 {% else %}
     <div class="rounded">
         <h2>{{ user.nick }}</h2>
+        Usuario desde: {{ user.created }},
+        tiene {{ user.points }} puntos.
+    </div>
+    <div class="rounded">
+        <h2>Preguntas:</h2>
+        {% for q in user.get_questions() %}
+            <div class="reward">{{ q.reward }}</div>
+            <div class="chat_msg_c" onclick="jump2url('{{ q.get_link() }}')">
+                <span>{{ q.created }}</span>
+                <span class="date">{{ q.updated|timesince }}</span>
+                <span class="tag">{{ q.num_answers }} respuestas</span>
+                <span class="tag">{{ q.get_status() }}</span>
+                <br/>
+                {{ q.get_resume() }}
+            </div>
+        {% endfor %}
     </div>
 {% endif %}
 

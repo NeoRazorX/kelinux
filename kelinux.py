@@ -19,6 +19,7 @@ env = Environment(loader=FileSystemLoader('templates'))
 # añadimos los filtros personalizados
 env.filters['timesince'] = timesince
 env.filters['highlight_page'] = highlight_page
+env.filters['linebreaks'] = linebreaks
 
 # definimos la configuración de cherrypy
 cp_config = {
@@ -144,7 +145,7 @@ class Main_web(Ke_web):
             cherrypy.response.headers['Content-Type'] = 'text/plain'
             tmpl = env.get_template('chat_log.html')
             return tmpl.render(chat_log=self.sc.get_chat_log(),
-                               chat_users=self.sc.chat_user_alive(self.current_user.nick,
+                               chat_users=self.sc.chat_user_alive(self.current_user,
                                                                   cherrypy.request.remote.ip))
         else:
             tmpl = env.get_template('chat_room.html')
