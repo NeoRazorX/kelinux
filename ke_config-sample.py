@@ -4,7 +4,7 @@
 APP_NAME = ''
 APP_DOMAIN = ''
 APP_DEBUG = True
-APP_OWNER = ''
+APP_ADMINS = ['your_nick']
 APP_DEFAULT_COOKIE_EXPIRATION = 1209600
 
 MYSQL_HOST = 'localhost'
