@@ -3,12 +3,13 @@
 {% if not question %}
     <div class="error">Pregunta no encontrada</div>
 {% else %}
+    <script type="text/javascript" src="/static/question.js"></script>
     <div class="rounded">
         <h2>{{ question.get_status() }}</h2>
         <div class="reward2">
-            {{ question.reward }}
+            <span id="question_reward">{{ question.reward }}</span>
             <br/>
-            <a href="#">+1 punto</a>
+            <a href="#" onclick="add_reward('{{ question.id }}')">+1 punto</a>
         </div>
         <div>{{ question.text|linebreaks }}</div>
         <div class="chat_msg">

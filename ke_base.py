@@ -466,6 +466,7 @@ class Ke_web:
             self.ke_data['stats'] = self.sc.get_stats()
         self.ke_data['rpage'] = title
         self.ke_data['errormsg'] = False
+        self.ke_data['message'] = False
     
     def set_current_user(self, user):
         self.current_user = user
@@ -548,6 +549,32 @@ class Ke_web:
                     self.ke_data['errormsg'] = 'error al guardar el usuario en la base de datos'
         if not self.ke_data['errormsg']:
             raise cherrypy.HTTPRedirect('/')
+    
+    def update_user(self, email='', nick='', passwd='', npasswd='', npasswd2=''):
+        if email == '':
+            self.ke_data['errormsg'] = 'introduce un email'
+        elif nick == '':
+            self.ke_data['errormsg'] = 'introduce un nombre de usuario'
+        elif not self.current_user.set_email(email):
+            self.ke_data['errormsg'] = u'el email no es válido o ya existe'
+        elif not self.current_user.set_nick(nick):
+            self.ke_data['errormsg'] = u'el nombre de usuario no es válido (debe contener entre 4 y 16 caracteres alfanuméricos) o ya existe'
+        else:
+            if passwd != '':
+                if self.current_user.password != hashlib.sha1(passwd).hexdigest():
+                    self.ke_data['errormsg'] = u'introduce tu actual contraseña'
+                elif npasswd == '' or npasswd2 == '':
+                    self.ke_data['errormsg'] = u'introduce la nueva contraseña (dos veces)'
+                elif npasswd != npasswd2:
+                    self.ke_data['errormsg'] = u'las nuevas contraseñas no coinciden'
+                elif not self.current_user.set_password(npasswd):
+                    self.ke_data['errormsg'] = u'la contraseña no es válida (debe contener entre 4 y 20 caracteres alfanuméricos)'
+            try:
+                Ke_session.add(self.current_user)
+                Ke_session.commit()
+                self.ke_data['message'] = 'usuario modificado correctamente'
+            except:
+                self.ke_data['errormsg'] = 'error al guardar el usuario en la base de datos'
     
     def do_log_out(self):
         self.set_cookie('user_id', '', 0)

@@ -58,13 +58,15 @@ class Main_web(Ke_web):
         return tmpl.render(ke_data=self.ke_data)
     
     @cherrypy.expose
-    def log_in(self, option='', email='', nick='', passwd='', passwd2=''):
+    def log_in(self, option='', email='', nick='', passwd='', passwd2='', npasswd='', npasswd2=''):
         self.first_step('log_in')
         if cherrypy.request.method == 'POST':
             if option == 'log_in':
                 self.do_log_in(email, passwd)
             elif option == 'register':
                 self.register(email, nick, passwd, passwd2)
+            elif option == 'update':
+                self.update_user(email, nick, passwd, npasswd, npasswd2)
             elif option == 'log_out':
                 self.do_log_out()
         tmpl = env.get_template('log_in.html')
@@ -75,6 +77,7 @@ class Main_web(Ke_web):
         self.first_step('create_msg')
         tmpl = env.get_template('create_msg.html')
         if cherrypy.request.method == 'POST':
+            cherrypy.response.headers['Content-Type'] = 'text/plain'
             if option == 'community':
                 return tmpl.render(community=self.new_community(name, description),
                                    ke_data=self.ke_data,
@@ -115,6 +118,29 @@ class Main_web(Ke_web):
         tmpl = env.get_template('question.html')
         return tmpl.render(question=self.sc.get_question_by_id(idq),
                            ke_data=self.ke_data)
+    
+    @cherrypy.expose
+    def question_reward(self, idq=''):
+        self.first_step('question')
+        cherrypy.response.headers['Content-Type'] = 'text/plain'
+        if self.current_user.logged_on:
+            if self.current_user.points > 0:
+                question = self.sc.get_question_by_id(idq)
+                if question:
+                    question.add_reward(1)
+                    self.current_user.add_points(-1)
+                    try:
+                        Ke_session.add(question)
+                        Ke_session.add(self.current_user)
+                        return 'OK;'+str(question.reward)+';'+str(self.current_user.points)
+                    except:
+                        return u'Error al procesar la petición'
+                else:
+                    return 'Pregunta no encontrada'
+            else:
+                return 'No tienes suficientes puntos'
+        else:
+            return u'Debes iniciar sesión'
     
     @cherrypy.expose
     def user_list(self):
