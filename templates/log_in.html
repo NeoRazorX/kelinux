@@ -32,9 +32,9 @@
     <table>
         <tr>
             <td align="right">Email:</td>
-            <td><input type="text" name="email" size="20" maxlength="50" value="{{ ke_data.user.email }}"/></td>
+            <td><input type="text" name="email" size="20" maxlength="50"/></td>
             <td align="right">Nick:</td>
-            <td><input type="text" name="nick" size="20" maxlength="16" value="{{ ke_data.user.nick }}"/></td>
+            <td><input type="text" name="nick" size="20" maxlength="16"/></td>
         </tr>
         <tr>
             <td align="right">Contraseña:</td>
@@ -97,7 +97,7 @@
 </table>
 <div class="rounded">
     <h2>Preguntas:</h2>
-    {% for q in ke_data.user.get_questions() %}
+    {% for q in ke_data.user.questions %}
         <div class="reward">{{ q.reward }}</div>
         <div class="chat_msg_c" onclick="jump2url('{{ q.get_link() }}')">
             <span>{{ q.created }}</span>

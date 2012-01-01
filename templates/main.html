@@ -40,7 +40,7 @@
     {% for q in question_list %}
         <div class="reward">{{ q.reward }}</div>
         <div class="chat_msg_c" onclick="jump2url('{{ q.get_link() }}')">
-            <span class="nick">{{ q.get_user().nick }}</span>
+            <span class="nick">{{ q.user.nick }}</span>
             <span class="date">{{ q.updated|timesince }}</span>
             <span class="tag">{{ q.num_answers }} respuestas</span>
             <span class="tag">{{ q.get_status() }}</span>

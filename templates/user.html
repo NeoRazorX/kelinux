@@ -10,7 +10,7 @@
     </div>
     <div class="rounded">
         <h2>Preguntas:</h2>
-        {% for q in user.get_questions() %}
+        {% for q in user.questions %}
             <div class="reward">{{ q.reward }}</div>
             <div class="chat_msg_c" onclick="jump2url('{{ q.get_link() }}')">
                 <span>{{ q.created }}</span>

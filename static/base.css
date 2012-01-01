@@ -304,9 +304,13 @@ div.chat_msg_c:hover {
     cursor: pointer;
 }
 
-div.chat_msg span.nick, div.chat_msg_c span.nick {
+div.chat_msg span.nick, div.chat_msg_c span.nick, div.chat_msg span.nick_c {
     font-weight: bold;
     padding-right: 10px;
+}
+
+div.chat_msg span.nick_c:hover {
+    cursor: pointer;
 }
 
 div.chat_msg span.tag, div.chat_msg_c span.tag {

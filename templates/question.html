@@ -12,7 +12,7 @@
         </div>
         <div>{{ question.text|linebreaks }}</div>
         <div class="chat_msg">
-            <span class="nick" onclick="jump2url('{{ question.get_user().get_link() }}')">{{ question.get_user().nick }}</span>
+            <span class="nick_c" onclick="jump2url('{{ question.user.get_link() }}')">{{ question.user.nick }}</span>
             <span>{{ question.created }}</span>
             <span class="date">{{ question.updated|timesince }}</span>
             <span class="tag">{{ question.num_answers }} respuestas</span>

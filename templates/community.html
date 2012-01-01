@@ -7,7 +7,8 @@
         <h2>{{ community.name }}</h2>
         <div class="chat_msg">
             {{ community.description }}
-            <span class="date">Usuarios: {{ community.num_users }}</span>
+            <span class="date">{{ community.created|timesince }}</span>
+            <span class="tag">Usuarios: {{ community.num_users }}</span>
         </div>
     </div>
 {% endif %}

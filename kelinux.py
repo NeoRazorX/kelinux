@@ -47,7 +47,7 @@ class Main_web(Ke_web):
     def index(self):
         self.first_step('index')
         tmpl = env.get_template('main.html')
-        return tmpl.render(question_list=self.sc.get_front(),
+        return tmpl.render(question_list=self.get_front_questions(),
                            community_list=self.sc.get_all_communities(),
                            ke_data=self.ke_data)
     

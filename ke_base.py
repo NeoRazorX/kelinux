@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import cherrypy, os, hashlib, random, re, cgi
-from sqlalchemy import create_engine, Column, ForeignKey, Integer, String, Boolean, Text, DateTime
+from sqlalchemy import create_engine, Column, ForeignKey, BigInteger, Integer, String, Boolean, Text, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, backref
-from datetime import datetime
+from datetime import datetime, timedelta
 from ke_config import *
 
 # iniciamos la clase declarativa para poder crear clases ya mapeadas
@@ -24,23 +24,20 @@ class Ke_user(Base):
     __tablename__ = 'users'
     __table_args__ = {'mysql_engine':'InnoDB', 'mysql_charset': 'utf8'}
     
-    id = Column(Integer, primary_key=True)
+    id = Column(BigInteger, primary_key=True)
     email = Column(String(50))
     password = Column(String(40))
     nick = Column(String(16))
-    admin = Column(Boolean, default=False)
     log_key = Column(String(40))
     points = Column(Integer, default=10)
     created = Column(DateTime, default=datetime.now())
     last_log_in = Column(DateTime, default=datetime.now())
-    
     logged_on = False
     
-    def __init__(self, e='', p='', n='anonymous', a=False, pts=10):
+    def __init__(self, e='', p='', n='anonymous', pts=10):
         self.email = e
         self.password = p
         self.nick = n
-        self.admin = a
         self.log_key = ''
         self.points = pts
         self.created = datetime.now()
@@ -56,9 +53,14 @@ class Ke_user(Base):
             return False
     
     def set_nick(self, n):
-        if re.match("^[a-zA-Z0-9_]{4,16}$", n):
-            self.nick = n
-            return True
+        if re.match("^[a-zA-Z0-9_]{4,16}$", n) and n != 'anonymous':
+            if n == self.nick:
+                return True
+            elif not Ke_session.query(Ke_user).filter_by(nick=n).first():
+                self.nick = n
+                return True
+            else:
+                return False
         else:
             return False
     
@@ -71,20 +73,28 @@ class Ke_user(Base):
     
     def set_email(self, e):
         if re.match("^[a-zA-Z0-9._%-]+@[a-zA-Z0-9._%-]+.[a-zA-Z]{2,6}$", e):
-            self.email = e
-            return True
+            if e == self.email:
+                return True
+            elif not Ke_session.query(Ke_user).filter_by(email=e).first():
+                self.email = e
+                return True
+            else:
+                return False
         else:
             return False
     
-    def set_admin(self, a):
-        self.admin = a
+    def is_admin(self):
+        if self.nick in APP_ADMINS:
+            return True
+        else:
+            return False
     
     def new_log_key(self):
         self.log_key = hashlib.sha1( str(random.randint(0, 999999)) ).hexdigest()
         self.last_log_in = datetime.now()
         self.logged_on = True
     
-    def sum_points(self, p):
+    def add_points(self, p):
         try:
             v = int(p)
         except:
@@ -99,9 +109,6 @@ class Ke_user(Base):
             return APPDOMAIN+'/user/'+str(self.id)
         else:
             return '/user/'+str(self.id)
-    
-    def get_questions(self):
-        return Ke_session.query(Ke_question).filter_by(user_id=self.id).order_by(Ke_question.id.desc()).all()
 
 
 # clase de comunidad ya mapeada con sqlalchemy
@@ -109,7 +116,7 @@ class Ke_community(Base):
     __tablename__ = 'communities'
     __table_args__ = {'mysql_engine':'InnoDB', 'mysql_charset': 'utf8'}
     
-    id = Column(Integer, primary_key=True)
+    id = Column(BigInteger, primary_key=True)
     name = Column(String(20))
     description = Column(String(200))
     created = Column(DateTime, default=datetime.now())
@@ -156,14 +163,16 @@ class Ke_question(Base):
     __tablename__ = 'questions'
     __table_args__ = {'mysql_engine':'InnoDB', 'mysql_charset': 'utf8'}
     
-    id = Column(Integer, primary_key=True)
+    id = Column(BigInteger, primary_key=True)
     text = Column(Text)
-    user_id = Column(Integer, ForeignKey('users.id'))
+    user_id = Column(BigInteger, ForeignKey('users.id'))
     created = Column(DateTime, default=datetime.now())
     updated = Column(DateTime, default=datetime.now())
     num_answers = Column(Integer, default=0)
     status = Column(Integer, default=0)
     reward = Column(Integer, default=1)
+    
+    user = relationship('Ke_user', backref=backref('questions', lazy='dynamic'))
     
     def __init__(self, t='', u=Ke_user()):
         self.text = t
@@ -200,17 +209,6 @@ class Ke_question(Base):
     def get_resume(self):
         return self.text[:200]
     
-    def get_user(self):
-        user = Ke_user()
-        if self.user_id != 0:
-            user2 = Ke_session.query(Ke_user).filter_by(id=self.user_id).first()
-            try:
-                if user2.exists():
-                    user = user2
-            except:
-                pass
-        return user
-    
     def set_status(self, s):
         if self.get_status(s) != 'estado desconocido':
             self.status = s
@@ -242,7 +240,7 @@ class Ke_question(Base):
         else:
             return 'estado desconocido'
     
-    def sum_reward(self, p):
+    def add_reward(self, p):
         try:
             v = int(p)
         except:
@@ -267,8 +265,11 @@ class Super_cache:
         'uptime': datetime.now(),
         'served_pages': 0,
         'users': 0,
+        'users_m': 0,
         'communities': 0,
-        'questions': 0
+        'communities_m': 0,
+        'questions': 0,
+        'questions_m': 0
     }
     
     def get_user_by_id(self, i):
@@ -282,6 +283,7 @@ class Super_cache:
             encontrado = False
             for u in self.users:
                 if u.id == i2:
+                    self.give_points2user(u)
                     user = u
                     encontrado = True
                     break
@@ -298,6 +300,7 @@ class Super_cache:
         encontrado = False
         for u in self.users:
             if u.email == email:
+                self.give_points2user(u)
                 user = u
                 encontrado = True
                 break
@@ -314,6 +317,7 @@ class Super_cache:
         encontrado = False
         for u in self.users:
             if u.nick == nick:
+                self.give_points2user(u)
                 user = u
                 encontrado = True
                 break
@@ -328,6 +332,15 @@ class Super_cache:
     
     def get_all_users(self):
         return Ke_session.query(Ke_user).order_by(Ke_user.nick).all()
+    
+    def give_points2user(self, u):
+        if random.randint(0, 99) == 0:
+            u.add_points(1)
+            Ke_session.add(u)
+            Ke_session.commit()
+            print 'sumas puntos'
+        else:
+            print 'no sumas puntos'
     
     def get_community_by_name(self, n):
         encontrado = False
@@ -359,6 +372,7 @@ class Super_cache:
             encontrado = False
             for q in self.questions:
                 if q.id == i2:
+                    self.increase_reward2question(q)
                     question = q
                     encontrado = True
                     break
@@ -374,8 +388,14 @@ class Super_cache:
     def get_all_questions(self):
         return Ke_session.query(Ke_question).order_by(Ke_question.id.desc()).all()
     
-    def get_front(self):
-        return Ke_session.query(Ke_question).order_by(Ke_question.id.desc())[0:20]
+    def increase_reward2question(self, q):
+        if random.randint(0, 99) == 0:
+            q.add_reward(1)
+            Ke_session.add(q)
+            Ke_session.commit()
+            print 'se incrementa la recompensa'
+        else:
+            print 'no se incrementa la recompensa'
     
     def get_chat_log(self):
         return self.chat_log
@@ -395,7 +415,7 @@ class Super_cache:
         encontrado = False
         i = 0
         while i < len(self.chat_users):
-            if self.chat_users[i][0] == ip and self.chat_users[i][1] == user:
+            if self.chat_users[i][0] == ip and self.chat_users[i][1].nick == user.nick:
                 encontrado = True
                 self.chat_users[i][2] = 20
             else:
@@ -409,12 +429,22 @@ class Super_cache:
         return self.chat_users
     
     def get_stats(self):
-        self.stats['users'] = len(self.users)
-        self.stats['communities'] = len(self.communities)
-        self.stats['questions'] = len(self.questions)
+        self.stats['users_m'] = len(self.users)
+        self.stats['communities_m'] = len(self.communities)
+        self.stats['questions_m'] = len(self.questions)
         return self.stats
     
-    def sum_served_pages(self):
+    def get_full_stats(self):
+        if random.randint(0, 9):
+            self.stats['users'] = Ke_session.query(Ke_user).count()
+            self.stats['users_m'] = len(self.users)
+            self.stats['communities'] = Ke_session.query(Ke_community).count()
+            self.stats['communities_m'] = len(self.communities)
+            self.stats['questions'] = Ke_session.query(Ke_question).count()
+            self.stats['questions_m'] = len(self.questions)
+        return self.stats
+    
+    def add_served_pages(self):
         self.stats['served_pages'] += 1
 
 
@@ -427,11 +457,14 @@ class Ke_web:
         'user': current_user
     }
     
-    def first_step(self, tittle):
+    def first_step(self, title):
         self.fast_log_in()
-        self.sc.sum_served_pages()
-        self.ke_data['stats'] = self.sc.get_stats()
-        self.ke_data['rpage'] = tittle
+        self.sc.add_served_pages()
+        if title == 'stats':
+            self.ke_data['stats'] = self.sc.get_full_stats()
+        else:
+            self.ke_data['stats'] = self.sc.get_stats()
+        self.ke_data['rpage'] = title
         self.ke_data['errormsg'] = False
     
     def set_current_user(self, user):
@@ -496,31 +529,25 @@ class Ke_web:
         elif passwd != passwd2:
             self.ke_data['errormsg'] = u'las contraseñas no coinciden'
         else:
-            user = self.sc.get_user_by_email(email)
-            if user.exists():
-                self.ke_data['errormsg'] = 'el usuario ya existe, elige otro email'
+            user = Ke_user()
+            if not user.set_email(email):
+                self.ke_data['errormsg'] = u'el email no es válido o ya existe'
+            elif not user.set_password(passwd):
+                self.ke_data['errormsg'] = u'la contraseña no es válida (debe contener entre 4 y 20 caracteres alfanuméricos)'
+            elif not user.set_nick(nick):
+                self.ke_data['errormsg'] = u'el nombre de usuario no es válido (debe contener entre 4 y 16 caracteres alfanuméricos) o ya existe'
             else:
-                user = Ke_user()
-                if not user.set_email(email):
-                    self.ke_data['errormsg'] = u'el email no es válido'
-                elif not user.set_password(passwd):
-                    self.ke_data['errormsg'] = u'la contraseña no es válida (debe contener entre 4 y 20 caracteres alfanuméricos)'
-                elif not user.set_nick(nick):
-                    self.ke_data['errormsg'] = u'el nombre de usuario no es válido (debe contener entre 4 y 16 caracteres alfanuméricos)'
-                else:
-                    if user.nick == APP_OWNER:
-                        user.set_admin(True)
-                    try:
-                        user.new_log_key()
-                        self.set_current_user(user)
-                        Ke_session.add(user)
-                        Ke_session.commit()
-                        self.set_cookie('user_id', user.id)
-                        self.set_cookie('log_key', user.log_key)
-                    except:
-                        self.ke_data['errormsg'] = 'error al guardar el usuario en la base de datos'
-            if not self.ke_data['errormsg']:
-                raise cherrypy.HTTPRedirect('/')
+                try:
+                    user.new_log_key()
+                    self.set_current_user(user)
+                    Ke_session.add(user)
+                    Ke_session.commit()
+                    self.set_cookie('user_id', user.id)
+                    self.set_cookie('log_key', user.log_key)
+                except:
+                    self.ke_data['errormsg'] = 'error al guardar el usuario en la base de datos'
+        if not self.ke_data['errormsg']:
+            raise cherrypy.HTTPRedirect('/')
     
     def do_log_out(self):
         self.set_cookie('user_id', '', 0)
@@ -547,7 +574,7 @@ class Ke_web:
                 else:
                     try:
                         Ke_session.add(community)
-                        self.current_user.sum_points(-1)
+                        self.current_user.add_points(-1)
                         Ke_session.add(self.current_user)
                         Ke_session.commit()
                     except:
@@ -570,3 +597,24 @@ class Ke_web:
                 except:
                     self.ke_data['errormsg'] = 'error al guardar la pregunta en la base de datos'
         return question
+    
+    def get_front_questions(self):
+        mixto = []
+        if self.current_user.logged_on:
+            for q in self.current_user.questions[-10:]:
+                if q.updated > (datetime.today() - timedelta(days=7)):
+                    mixto.insert(0, q)
+        choice = random.randint(0, 2)
+        if choice == 0:
+            for q in Ke_session.query(Ke_question).order_by(Ke_question.id.desc())[0:20]:
+                if q not in mixto:
+                    mixto.append(q)
+        elif choice == 1:
+            for q in Ke_session.query(Ke_question).order_by(Ke_question.reward.desc())[0:20]:
+                if q not in mixto:
+                    mixto.append(q)
+        else:
+            for q in Ke_session.query(Ke_question).order_by(Ke_question.num_answers)[0:20]:
+                if q not in mixto:
+                    mixto.append(q)
+        return mixto
