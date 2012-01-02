@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import cherrypy, os, hashlib, random, re, cgi
-from sqlalchemy import create_engine, Column, ForeignKey, BigInteger, Integer, String, Boolean, Text, DateTime
+from sqlalchemy import create_engine, Table, Column, ForeignKey, BigInteger, Integer, String, Boolean, Text, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, backref
 from datetime import datetime, timedelta
@@ -34,17 +34,14 @@ class Ke_user(Base):
     last_log_in = Column(DateTime, default=datetime.now())
     logged_on = False
     
-    def __init__(self, e='', p='', n='anonymous', pts=10):
-        self.email = e
-        self.password = p
-        self.nick = n
+    def __init__(self):
+        self.email = ''
+        self.password = ''
+        self.nick = 'anonymous'
         self.log_key = ''
-        self.points = pts
+        self.points = 10
         self.created = datetime.now()
         self.last_log_in = datetime.now()
-    
-    def __repr__(self):
-        return "<Ke_user('%s','%s')>" % (self.email, self.nick)
     
     def exists(self):
         if self.email != '' and self.password != '':
@@ -111,6 +108,13 @@ class Ke_user(Base):
             return '/user/'+str(self.id)
 
 
+# tabla necesaria para la relación muchos a muchos entre Ke_user y Ke_community
+Ke_user_community_table = Table('user_community', Base.metadata,
+    Column('users_id', BigInteger, ForeignKey('users.id')),
+    Column('communities_id', BigInteger, ForeignKey('communities.id'))
+)
+
+
 # clase de comunidad ya mapeada con sqlalchemy
 class Ke_community(Base):
     __tablename__ = 'communities'
@@ -122,14 +126,13 @@ class Ke_community(Base):
     created = Column(DateTime, default=datetime.now())
     num_users = Column(Integer, default=0)
     
-    def __init__(self, n='', d=''):
-        self.name = n
-        self.description = d
+    users = relationship("Ke_user", secondary=Ke_user_community_table, backref=backref('communities'))
+    
+    def __init__(self):
+        self.name = ''
+        self.description = ''
         self.created = datetime.now()
         self.num_users = 0
-    
-    def __repr__(self):
-        return "<Ke_community('%s')>" % (self.name)
     
     def exists(self):
         if self.name != '' and self.description != '':
@@ -146,7 +149,7 @@ class Ke_community(Base):
     
     def set_description(self, t):
         if t.strip() != '':
-            self.description = cgi.escape(t, True)
+            self.description = cgi.escape(t[:200], True)
             return True
         else:
             return False
@@ -156,6 +159,13 @@ class Ke_community(Base):
             return APPDOMAIN+'/community/'+self.name
         else:
             return '/community/'+self.name
+
+
+# tabla necesaria para la relación muchos a muchos entre Ke_community y Ke_question
+Ke_community_question_table = Table('community_question', Base.metadata,
+    Column('communities_id', BigInteger, ForeignKey('communities.id')),
+    Column('questions_id', BigInteger, ForeignKey('questions.id'))
+)
 
 
 # clase de pregunta ya mapeada con sqlalchemy
@@ -172,19 +182,16 @@ class Ke_question(Base):
     status = Column(Integer, default=0)
     reward = Column(Integer, default=1)
     
-    user = relationship('Ke_user', backref=backref('questions', lazy='dynamic'))
+    user = relationship('Ke_user', backref=backref('questions'))
+    communities = relationship("Ke_community", secondary=Ke_community_question_table, backref=backref('questions'))
     
-    def __init__(self, t='', u=Ke_user()):
-        self.text = t
-        self.user_id = u.id
+    def __init__(self):
+        self.text = ''
         self.created = datetime.now()
         self.updated = datetime.now()
         self.num_answers = 0
         self.status = 0
         self.reward = 1
-    
-    def __repr__(self):
-        return "<Ke_question('%s', '%s')>" % (self.resume, self.email)
     
     def exists(self):
         if self.text != '':
@@ -195,13 +202,6 @@ class Ke_question(Base):
     def set_text(self, t):
         if t.strip() != '':
             self.text = cgi.escape(t, True)
-            return True
-        else:
-            return False
-    
-    def set_user(self, u):
-        if u.logged_on:
-            self.user_id = u.id
             return True
         else:
             return False
@@ -255,12 +255,61 @@ class Ke_question(Base):
             return '/question/'+str(self.id)
 
 
+# clase de respuesta ya mapeada con sqlalchemy
+class Ke_answer(Base):
+    __tablename__ = 'answers'
+    __table_args__ = {'mysql_engine':'InnoDB', 'mysql_charset': 'utf8'}
+    
+    id = Column(BigInteger, primary_key=True)
+    text = Column(Text)
+    user_id = Column(BigInteger, ForeignKey('users.id'))
+    question_id = Column(BigInteger, ForeignKey('questions.id'))
+    created = Column(DateTime, default=datetime.now())
+    grade = Column(Integer, default=0)
+    
+    user = relationship('Ke_user', backref=backref('answers'))
+    question = relationship('Ke_question', backref=backref('answers'))
+    
+    def __init__(self):
+        self.text = ''
+        self.created = datetime.now()
+        self.grade = 0
+    
+    def exists(self):
+        if self.text != '':
+            return True
+        else:
+            return False
+    
+    def set_text(self, t):
+        if t.strip() != '':
+            self.text = cgi.escape(t, True)
+            return True
+        else:
+            return False
+    
+    def add_grade(self, p):
+        try:
+            v = int(p)
+        except:
+            v = 0
+        if v != 0:
+            self.grade += v
+    
+    def get_link(self, full=False):
+        if full:
+            return APPDOMAIN+'/question/'+str(self.question_id)
+        else:
+            return '/question/'+str(self.question_id)
+
+
 class Super_cache:
     users = []
     communities = []
     questions = []
     chat_log = []
     chat_users = []
+    searches = []
     stats = {
         'uptime': datetime.now(),
         'served_pages': 0,
@@ -269,7 +318,8 @@ class Super_cache:
         'communities': 0,
         'communities_m': 0,
         'questions': 0,
-        'questions_m': 0
+        'questions_m': 0,
+        'searches': 0
     }
     
     def get_user_by_id(self, i):
@@ -334,13 +384,13 @@ class Super_cache:
         return Ke_session.query(Ke_user).order_by(Ke_user.nick).all()
     
     def give_points2user(self, u):
-        if random.randint(0, 99) == 0:
-            u.add_points(1)
-            Ke_session.add(u)
-            Ke_session.commit()
-            print 'sumas puntos'
-        else:
-            print 'no sumas puntos'
+        if u.logged_on and random.randint(0, 99) == 0:
+            u.add_points(+1)
+            try:
+                Ke_session.add(u)
+                Ke_session.commit()
+            except:
+                Ke_session.rollback()
     
     def get_community_by_name(self, n):
         encontrado = False
@@ -389,13 +439,13 @@ class Super_cache:
         return Ke_session.query(Ke_question).order_by(Ke_question.id.desc()).all()
     
     def increase_reward2question(self, q):
-        if random.randint(0, 99) == 0:
+        if q.exists() and random.randint(0, 99) == 0:
             q.add_reward(1)
-            Ke_session.add(q)
-            Ke_session.commit()
-            print 'se incrementa la recompensa'
-        else:
-            print 'no se incrementa la recompensa'
+            try:
+                Ke_session.add(q)
+                Ke_session.commit()
+            except:
+                Ke_session.rollback()
     
     def get_chat_log(self):
         return self.chat_log
@@ -428,6 +478,20 @@ class Super_cache:
             self.chat_users.append([ip, user, 20])
         return self.chat_users
     
+    def new_search(self, query):
+        encontrada = False
+        for s in self.searches:
+            if s[0] == query:
+                s[1] += 1
+                encontrada = True
+                break
+        if not encontrada:
+            self.searches.append([query, 1])
+        return Ke_session.query(Ke_question).filter(Ke_question.text.like('%'+query+'%'))
+    
+    def get_searches(self):
+        return self.searches
+    
     def get_stats(self):
         self.stats['users_m'] = len(self.users)
         self.stats['communities_m'] = len(self.communities)
@@ -435,13 +499,16 @@ class Super_cache:
         return self.stats
     
     def get_full_stats(self):
-        if random.randint(0, 9):
+        if random.randint(0, 9) == 0:
             self.stats['users'] = Ke_session.query(Ke_user).count()
             self.stats['users_m'] = len(self.users)
             self.stats['communities'] = Ke_session.query(Ke_community).count()
             self.stats['communities_m'] = len(self.communities)
             self.stats['questions'] = Ke_session.query(Ke_question).count()
             self.stats['questions_m'] = len(self.questions)
+            self.stats['searches'] = 0
+            for s in self.searches:
+                self.stats['searches'] += s[1]
         return self.stats
     
     def add_served_pages(self):
@@ -495,14 +562,19 @@ class Ke_web:
                 self.ke_data['errormsg'] = 'usuario no encontrado'
             elif user.password == hashlib.sha1(passwd).hexdigest():
                 user.new_log_key()
-                Ke_session.add(user)
-                Ke_session.commit()
-                self.set_current_user(user)
-                self.set_cookie('user_id', user.id)
-                self.set_cookie('log_key', user.log_key)
-                raise cherrypy.HTTPRedirect('/')
+                try:
+                    Ke_session.add(user)
+                    Ke_session.commit()
+                    self.set_current_user(user)
+                    self.set_cookie('user_id', user.id)
+                    self.set_cookie('log_key', user.log_key)
+                except:
+                    Ke_session.rollback()
+                    self.ke_data['errormsg'] = 'error al actualizar la base de datos'
             else:
                 self.ke_data['errormsg'] = u'contraseña incorrecta'
+        if not self.ke_data['errormsg']:
+            raise cherrypy.HTTPRedirect('/')
     
     def fast_log_in(self):
         user = Ke_user()
@@ -546,6 +618,7 @@ class Ke_web:
                     self.set_cookie('user_id', user.id)
                     self.set_cookie('log_key', user.log_key)
                 except:
+                    Ke_session.rollback()
                     self.ke_data['errormsg'] = 'error al guardar el usuario en la base de datos'
         if not self.ke_data['errormsg']:
             raise cherrypy.HTTPRedirect('/')
@@ -574,6 +647,7 @@ class Ke_web:
                 Ke_session.commit()
                 self.ke_data['message'] = 'usuario modificado correctamente'
             except:
+                Ke_session.rollback()
                 self.ke_data['errormsg'] = 'error al guardar el usuario en la base de datos'
     
     def do_log_out(self):
@@ -605,6 +679,7 @@ class Ke_web:
                         Ke_session.add(self.current_user)
                         Ke_session.commit()
                     except:
+                        Ke_session.rollback()
                         self.ke_data['errormsg'] = 'error al guardar la comunidad en la base de datos'
         return community
     
@@ -615,15 +690,37 @@ class Ke_web:
         else:
             if not question.set_text(text):
                 self.ke_data['errormsg'] = u'introduce texto válido'
-            elif not question.set_user( self.current_user ):
-                self.ke_data['errormsg'] = u'usuario no válido: '+self.current_user.nick
             else:
+                question.user = self.current_user
+                for c in self.current_user.communities:
+                    question.communities.append(c)
                 try:
                     Ke_session.add(question)
                     Ke_session.commit()
                 except:
+                    Ke_session.rollback()
                     self.ke_data['errormsg'] = 'error al guardar la pregunta en la base de datos'
         return question
+    
+    def add_reward2question(self, idq=''):
+        if self.current_user.logged_on:
+            if self.current_user.points > 0:
+                question = self.sc.get_question_by_id(idq)
+                if question:
+                    question.add_reward(1)
+                    self.current_user.add_points(-1)
+                    try:
+                        Ke_session.commit()
+                        return 'OK;'+str(question.reward)+';'+str(self.current_user.points)
+                    except:
+                        Ke_session.rollback()
+                        return u'Error al procesar la petición'
+                else:
+                    return 'Pregunta no encontrada'
+            else:
+                return 'No tienes suficientes puntos'
+        else:
+            return u'Debes iniciar sesión'
     
     def get_front_questions(self):
         mixto = []
@@ -645,3 +742,28 @@ class Ke_web:
                 if q not in mixto:
                     mixto.append(q)
         return mixto
+    
+    def new_answer(self, idq='', text=''):
+        question = self.sc.get_question_by_id(idq)
+        if question.exists():
+            if text != '':
+                answer = Ke_answer()
+                if answer.set_text(text):
+                    answer.user = self.current_user
+                    answer.question = question
+                    question.num_answers = len( question.answers )
+                    if question.status == 0:
+                        question.set_status(1)
+                    try:
+                        Ke_session.add(answer)
+                        Ke_session.add(question)
+                        Ke_session.commit()
+                        self.ke_data['message'] = 'respuesta guardada correctamente'
+                    except:
+                        Ke_session.rollback()
+                        self.ke_data['errormsg'] = 'error al guardar la respuesta en la base de datos'
+                else:
+                    self.ke_data['errormsg'] = u'introduce texto válido'
+        else:
+            self.ke_data['errormsg'] = 'pregunta no encontrada'
+        return question

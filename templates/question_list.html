@@ -1,9 +1,6 @@
 {% include "header.html" %}
 
-{% if not question_list %}
-    <div class="error">Nada que mostrar :(</div>
-{% else %}
-    <div class="rounded">
+<div class="rounded">
     <h2>Lista de preguntas</h2>
     {% for q in question_list %}
         <div class="reward">{{ q.reward }}</div>
@@ -16,7 +13,6 @@
             {{ q.get_resume() }}
         </div>
     {% endfor %}
-    </div>
-{% endif %}
+</div>
 
 {% include "footer.html" %}

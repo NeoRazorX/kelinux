@@ -1,19 +1,28 @@
 var req_question;
+var v_reload = setTimeout("load_answers()", 500);
 
-function add_reward(idq)
+function add_reward()
 {
-    req_question = new XMLHttpRequest();
-    if(req_question)
+    var question_id = document.f_answer.idq.value;
+    if(question_id)
     {
-        req_question.onreadystatechange = process_reward;
-        req_question.open("POST", "/question_reward", true);
-        var formData = new FormData();
-        formData.append("idq", idq);
-        req_question.send(formData);
+        req_question = new XMLHttpRequest();
+        if(req_question)
+        {
+            req_question.onreadystatechange = process_reward;
+            req_question.open("POST", "/question_reward", true);
+            var formData = new FormData();
+            formData.append("idq", question_id);
+            req_question.send(formData);
+        }
+        else
+        {
+            alert("Imposible crear la peticion!");
+        }
     }
     else
     {
-        alert("Imposible crear la peticion!");
+        alert("idq no encontrado!");
     }
 }
 
@@ -41,5 +50,72 @@ function process_reward()
         {
             alert(messg);
         }
+    }
+}
+
+function load_answers()
+{
+    var question_id = document.f_answer.idq.value;
+    if(question_id)
+    {
+        req_question = new XMLHttpRequest();
+        if(req_question)
+        {
+            req_question.onreadystatechange = process_answers;
+            req_question.open("POST", "/answers", true);
+            var formData = new FormData();
+            formData.append("idq", question_id);
+            req_question.send(formData);
+            clearTimeout(v_reload);
+            v_reload = setTimeout("load_answers()", 300000);
+        }
+        else
+        {
+            alert("Imposible crear la peticion!");
+        }
+    }
+    else
+    {
+        alert("idq no encontrado!");
+    }
+}
+
+function process_answers()
+{
+    var question_answers = document.getElementById("question_answers");
+    if(req_question.readyState == 4)
+    {
+        question_answers.innerHTML = req_question.responseText;
+    }
+    else
+    {
+        question_answers.innerHTML = 'cargando...';
+    }
+}
+
+function send_answer()
+{
+    var question_id = document.f_answer.idq.value;
+    if(question_id)
+    {
+        req_question = new XMLHttpRequest();
+        if(req_question)
+        {
+            req_question.onreadystatechange = process_answers;
+            req_question.open("POST", "/answers", true);
+            var formData = new FormData();
+            formData.append("idq", question_id);
+            formData.append("text", document.f_answer.text.value);
+            req_question.send(formData);
+            document.f_answer.text.value = '';
+        }
+        else
+        {
+            alert("Imposible crear la peticion!");
+        }
+    }
+    else
+    {
+        alert("idq no encontrado!");
     }
 }

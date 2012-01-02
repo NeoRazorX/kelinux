@@ -1,0 +1,14 @@
+<div class="rounded">
+<h2>resultados de "{{ query }}": <a class="b_close" href="#" onclick="close_finder_ressults();">X</a></h2>
+{% for q in questions %}
+    <div class="reward">{{ q.reward }}</div>
+    <div class="chat_msg_c" onclick="jump2url('{{ q.get_link() }}')">
+        <span class="nick">{{ q.user.nick }}</span>
+        <span class="date">{{ q.updated|timesince }}</span>
+        <span class="tag">{{ q.num_answers }} respuestas</span>
+        <span class="tag">{{ q.get_status() }}</span>
+        <br/>
+        {{ q.get_resume() }}
+    </div>
+{% endfor %}
+</div>

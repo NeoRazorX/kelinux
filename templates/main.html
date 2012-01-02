@@ -1,14 +1,23 @@
 {% include "header.html" %}
 
 {% if ke_data.user.logged_on %}
-    <div class="rounded2">
+    <div class="rounded">
         <h2>Hola {{ ke_data.user.nick }}!</h2>
         Tienes <b>{{ ke_data.user.points }}</b> puntos. Los puntos son necesarios para <b>votar las respuestas</b>, y sobre todo,
         para <b>añadirlos</b> a la <b>recompensa de cada pregunta</b>.<br/>
         Las preguntas con una recompensa más alta son más visibles, y el usuario que las resuelve obtiene esa recompensa en puntos.
     </div>
+    
+    <div class="rounded">
+        <h2>Eres miembro de:</h2>
+        <div class="d_list">
+            {% for c in ke_data.user.communities %}
+                <div class="element_c" onclick="jump2url('{{ c.get_link() }}')">{{ c.name }} ({{ c.num_users }})</div>
+            {% endfor %}
+        </div>
+    </div>
 {% else %}
-    <div class="rounded2">
+    <div class="rounded">
         <h2>Bienvenido a Kelinux.net</h2>
         Kelinux.net es una red solical que tiene como misión <b>solucionar todos los problemas que puedas tener con Linux</b>,
         con <b>cualquier distribución</b>: Ubuntu, Linux Mint, Debian, Fedora, OpenSuSE ... y <b>sin importar cuanto sepas de
@@ -18,25 +27,19 @@
         y así <b>entre todos</b> las podremos <b>solucionar</b>. Además verás en todo momento los cambios y <b>te notificaremos</b>
         cualquier respuesta.
     </div>
-{% endif %}
-
-{% if not community_list %}
-    <div class="error">Nada que mostrar :(</div>
-{% else %}
-    <div class="rounded2">
+    
+    <div class="rounded">
         <h2>Únete a una comunidad:</h2>
         <div class="d_list">
             {% for c in community_list %}
-                <div class="element_c" onclick="jump2url('{{ c.get_link() }}')">{{ c.name }}</div>
+                <div class="element_c" onclick="jump2url('{{ c.get_link() }}')">{{ c.name }} ({{ c.num_users }})</div>
             {% endfor %}
         </div>
     </div>
 {% endif %}
 
-{% if not question_list %}
-    <div class="error">Nada que mostrar :(</div>
-{% else %}
-    <div class="rounded">
+<div class="rounded">
+    <h2>Preguntas en portada</h2>
     {% for q in question_list %}
         <div class="reward">{{ q.reward }}</div>
         <div class="chat_msg_c" onclick="jump2url('{{ q.get_link() }}')">
@@ -48,7 +51,6 @@
             {{ q.get_resume() }}
         </div>
     {% endfor %}
-    </div>
-{% endif %}
+</div>
 
 {% include "footer.html" %}

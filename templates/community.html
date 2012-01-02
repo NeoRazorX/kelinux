@@ -1,16 +1,52 @@
 {% include "header.html" %}
 
-{% if not community %}
-    <div class="error">Comunidad no encontrada</div>
-{% else %}
+<div class="rounded">
+    <h2>{{ community.name }}</h2>
+    <div class="chat_msg">
+        {{ community.description }}
+        <span class="date">{{ community.created|timesince }}</span>
+        <span class="tag">Usuarios: {{ community.num_users }}</span>
+    </div>
+    <form action="/join_community">
+        <input type="hidden" name="name" value="{{ community.name }}"/>
+        {% if community in ke_data.user.communities %}
+            <input type="submit" value="abandonar"/> Eres miembro de esta comunidad
+        {% else %}
+            <input type="submit" value="unirme"/> No formas parte de esta comunidad
+        {% endif %}
+    </form>
+</div>
+
+<table width="100%">
+<tr>
+    <td valign="top">
     <div class="rounded">
-        <h2>{{ community.name }}</h2>
-        <div class="chat_msg">
-            {{ community.description }}
-            <span class="date">{{ community.created|timesince }}</span>
-            <span class="tag">Usuarios: {{ community.num_users }}</span>
+        <h2>Preguntas:</h2>
+        {% for q in community.questions %}
+            <div class="reward">{{ q.reward }}</div>
+            <div class="chat_msg_c" onclick="jump2url('{{ q.get_link() }}')">
+                <span>{{ q.created }}</span>
+                <span class="date">{{ q.updated|timesince }}</span>
+                <span class="tag">{{ q.num_answers }} respuestas</span>
+                <span class="tag">{{ q.get_status() }}</span>
+                <br/>
+                {{ q.get_resume() }}
+            </div>
+        {% endfor %}
         </div>
     </div>
-{% endif %}
+    </td>
+    <td valign="top">
+    <div class="rounded">
+        <h2>Miembros:</h2>
+        <div class="d_list">
+        {% for u in community.users %}
+            <div class="element_c" onclick="jump2url('{{ u.get_link() }}')">{{ u.nick }} ({{ u.points }})</div>
+        {% endfor %}
+        </div>
+    </div>
+    </td>
+</tr>
+</table>
 
 {% include "footer.html" %}

@@ -1,24 +1,34 @@
 {% include "header.html" %}
 
-{% if not question %}
-    <div class="error">Pregunta no encontrada</div>
-{% else %}
-    <script type="text/javascript" src="/static/question.js"></script>
-    <div class="rounded">
-        <h2>{{ question.get_status() }}</h2>
-        <div class="reward2">
-            <span id="question_reward">{{ question.reward }}</span>
-            <br/>
-            <a href="#" onclick="add_reward('{{ question.id }}')">+1 punto</a>
-        </div>
-        <div>{{ question.text|linebreaks }}</div>
-        <div class="chat_msg">
-            <span class="nick_c" onclick="jump2url('{{ question.user.get_link() }}')">{{ question.user.nick }}</span>
-            <span>{{ question.created }}</span>
-            <span class="date">{{ question.updated|timesince }}</span>
-            <span class="tag">{{ question.num_answers }} respuestas</span>
-        </div>
+<script type="text/javascript" src="/static/question.js"></script>
+
+<div class="rounded">
+    <h2>{{ question.get_status() }}</h2>
+    <div class="reward2">
+        <span id="question_reward">{{ question.reward }}</span>
+        <br/>
+        <a href="#" onclick="add_reward()">+1 punto</a>
     </div>
-{% endif %}
+    <div>{{ question.text|linebreaks }}</div>
+    <div class="chat_msg">
+        <span class="nick_c" onclick="jump2url('{{ question.user.get_link() }}')">{{ question.user.nick }}</span>
+        {% for c in question.communities %}
+            <span class="community_c" onclick="jump2url('{{ c.get_link() }}')">{{ c.name }}</span>
+        {% endfor %}
+        <span class="date">{{ question.updated|timesince }}</span>
+        <span class="tag">{{ question.num_answers }} respuestas</span>
+    </div>
+</div>
+
+<div class="rounded">
+    <h2>Respuestas:</h2>
+    <div id="question_answers"></div>
+    
+    <form name="f_answer" onsubmit="send_answer(); return false">
+        <input type="hidden" name="idq" value="{{ question.id }}"/>
+        <textarea name="text" rows="6"></textarea>
+        <input type="submit" value="enviar"/>
+    </form>
+</div>
 
 {% include "footer.html" %}

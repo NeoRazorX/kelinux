@@ -14,8 +14,8 @@
     <tr>
         <td id="logo"><a href="/">{{ ke_data.appdomain }}</a></td>
         <td id="finder">
-            <form>
-                <input type="text" name="texto"/>
+            <form name="f_finder" onsubmit="find_question(); return false">
+                <input type="text" name="query" size="30" maxlength="99"/>
                 <input id="b_find" type="submit" value="buscar"/>
             </form>
         </td>
@@ -63,7 +63,7 @@
     <div class="d_hidden" id="d_create_community">
     {% if ke_data.user.logged_on %}
     <table width="100%">
-    <form name="f_create_community">
+    <form name="f_create_community" onsubmit="create_community(); return false">
         <tr>
             <td align="right">Nombre de la comunidad:</td>
             <td><input type="text" name="name" value="" maxlength="20"/></td>
@@ -74,7 +74,7 @@
         </tr>
         <tr>
             <td colspan="2">
-                <div class="d_right">Cuesta 1 punto &nbsp; <input type="button" value="crear" onclick="create_community()"/></div>
+                <div class="d_right">Cuesta 1 punto &nbsp; <input type="submit" value="crear"/></div>
             </td>
         </tr>
     </form>
@@ -85,9 +85,9 @@
     </div>
     <div class="d_hidden" id="d_create_question">
     {% if ke_data.user.logged_on %}
-        <form name="f_create_question">
+        <form name="f_create_question" onsubmit="create_question(); return false">
             <textarea rows="10" name="text" onclick="clear_text(this,'Escribe tu pregunta...')">Escribe tu pregunta...</textarea>
-            <div class="d_right">Cuesta 0 puntos &nbsp; <input type="button" value="crear" onclick="create_question()"/></div>
+            <div class="d_right">Cuesta 0 puntos &nbsp; <input type="submit" value="crear"/></div>
         </form>
     {% else %}
         <div class="error">Debes estar <a href="/log_in">registrado</a> para esto.</div>
@@ -96,6 +96,8 @@
 </div>
 
 <div id="main_div"/>
+<div id="finder_ressults"></div>
+
 {% if ke_data.errormsg %}
 <div class="error">{{ ke_data.errormsg }}</div>
 {% endif %}

@@ -102,3 +102,40 @@ function jump2url(url)
 {
     window.location.href = url;
 }
+
+var req_finder;
+
+function find_question()
+{
+    req_finder = new XMLHttpRequest();
+    if(req_finder)
+    {
+        req_finder.onreadystatechange = process_finder_req;
+        req_finder.open("POST", "/finder", true);
+        var formData = new FormData();
+        formData.append("query", document.f_finder.query.value);
+        req_finder.send(formData);
+    }
+    else
+    {
+        alert("Imposible crear la peticion!");
+    }
+}
+
+function process_finder_req()
+{
+    var finder_ressults = document.getElementById('finder_ressults');
+    if(req_finder.readyState == 4)
+    {
+        finder_ressults.innerHTML = req_finder.responseText;
+    }
+    else
+    {
+        finder_ressults.innerHTML = 'cargando...';
+    }
+}
+
+function close_finder_ressults()
+{
+    document.getElementById('finder_ressults').innerHTML = '';
+}

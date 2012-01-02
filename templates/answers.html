@@ -1,0 +1,16 @@
+{% if ke_data.errormsg %}
+<div class="error">{{ ke_data.errormsg }}</div>
+{% endif %}
+
+{% if ke_data.message %}
+<div class="message">{{ ke_data.message }}</div>
+{% endif %}
+
+{% for a in question.answers %}
+    <div class="reward">{{ a.grade }}</div>
+    <div class="chat_msg">
+        <span class="nick_c" onclick="jump2url('{{ a.user.get_link() }}')">{{ a.user.nick }}</span>
+        <span class="date">{{ a.created|timesince }}</span>
+        {{ a.text|linebreaks }}
+    </div>
+{% endfor %}

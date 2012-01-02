@@ -11,7 +11,7 @@ function load_chat_log()
         req_chat.send(null);
         document.chat_form.text.focus();
         clearTimeout(v_reload);
-        v_reload = setTimeout("load_chat_log()", 10000);
+        v_reload = setTimeout("load_chat_log()", 15000);
     }
     else
     {

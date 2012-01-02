@@ -12,6 +12,7 @@ from jinja2_custom_filters import *
 Ke_user().metadata.create_all(Ke_engine)
 Ke_community().metadata.create_all(Ke_engine)
 Ke_question().metadata.create_all(Ke_engine)
+Ke_answer().metadata.create_all(Ke_engine)
 
 # cargamos las templates para jinja2
 env = Environment(loader=FileSystemLoader('templates'))
@@ -73,26 +74,31 @@ class Main_web(Ke_web):
         return tmpl.render(ke_data=self.ke_data)
     
     @cherrypy.expose
-    def create(self, option='', name='', description='', text=''):
+    def finder(self, query=''):
         self.first_step('create_msg')
-        tmpl = env.get_template('create_msg.html')
-        if cherrypy.request.method == 'POST':
-            cherrypy.response.headers['Content-Type'] = 'text/plain'
-            if option == 'community':
-                return tmpl.render(community=self.new_community(name, description),
-                                   ke_data=self.ke_data,
-                                   option='community')
-            elif option == 'question':
-                return tmpl.render(question=self.new_question(text),
-                                   ke_data=self.ke_data,
-                                   option='question')
-            else:
-                raise cherrypy.HTTPRedirect('/')
-        else:
-            raise cherrypy.HTTPRedirect('/')
+        cherrypy.response.headers['Content-Type'] = 'text/plain'
+        tmpl = env.get_template('finder_log.html')
+        return tmpl.render(questions=self.sc.new_search(query),
+                           query=query)
     
     @cherrypy.expose
-    def community_list(self, name='', description=''):
+    def create(self, option='', name='', description='', text=''):
+        self.first_step('create_msg')
+        cherrypy.response.headers['Content-Type'] = 'text/plain'
+        tmpl = env.get_template('create_msg.html')
+        if option == 'community':
+            return tmpl.render(community=self.new_community(name, description),
+                               ke_data=self.ke_data,
+                               option='community')
+        elif option == 'question':
+            return tmpl.render(question=self.new_question(text),
+                               ke_data=self.ke_data,
+                               option='question')
+        else:
+            raise cherrypy.HTTPRedirect('/log_in')
+    
+    @cherrypy.expose
+    def community_list(self):
         self.first_step('community_list')
         tmpl = env.get_template('community_list.html')
         return tmpl.render(community_list=self.sc.get_all_communities(),
@@ -106,7 +112,29 @@ class Main_web(Ke_web):
                            ke_data=self.ke_data)
     
     @cherrypy.expose
-    def question_list(self, text='', email=''):
+    def join_community(self, name=''):
+        self.first_step('community')
+        if self.current_user.logged_on:
+            community = self.sc.get_community_by_name(name)
+            if community:
+                if self.current_user in community.users:
+                    community.users.remove(self.current_user)
+                else:
+                    community.users.append(self.current_user)
+                community.num_users = len( community.users )
+                try:
+                    Ke_session.add(community)
+                    Ke_session.commit()
+                except:
+                    Ke_session.rollback()
+                raise cherrypy.HTTPRedirect('/community/'+name)
+            else:
+                raise cherrypy.HTTPRedirect('/community_list')
+        else:
+            raise cherrypy.HTTPRedirect('/log_in')
+    
+    @cherrypy.expose
+    def question_list(self):
         self.first_step('question_list')
         tmpl = env.get_template('question_list.html')
         return tmpl.render(question_list=self.sc.get_all_questions(),
@@ -123,24 +151,14 @@ class Main_web(Ke_web):
     def question_reward(self, idq=''):
         self.first_step('question')
         cherrypy.response.headers['Content-Type'] = 'text/plain'
-        if self.current_user.logged_on:
-            if self.current_user.points > 0:
-                question = self.sc.get_question_by_id(idq)
-                if question:
-                    question.add_reward(1)
-                    self.current_user.add_points(-1)
-                    try:
-                        Ke_session.add(question)
-                        Ke_session.add(self.current_user)
-                        return 'OK;'+str(question.reward)+';'+str(self.current_user.points)
-                    except:
-                        return u'Error al procesar la petición'
-                else:
-                    return 'Pregunta no encontrada'
-            else:
-                return 'No tienes suficientes puntos'
-        else:
-            return u'Debes iniciar sesión'
+        return self.add_reward2question(idq)
+    
+    @cherrypy.expose
+    def answers(self, idq='', text=''):
+        self.first_step('question')
+        tmpl = env.get_template('answers.html')
+        return tmpl.render(question=self.new_answer(idq, text),
+                           ke_data=self.ke_data)
     
     @cherrypy.expose
     def user_list(self):
@@ -160,7 +178,8 @@ class Main_web(Ke_web):
     def stats(self):
         self.first_step('stats')
         tmpl = env.get_template('stats.html')
-        return tmpl.render(ke_data=self.ke_data)
+        return tmpl.render(searches=self.sc.get_searches(),
+                           ke_data=self.ke_data)
     
     @cherrypy.expose
     def chat_room(self, text=''):

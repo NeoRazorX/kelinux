@@ -1,7 +1,7 @@
 {% include "header.html" %}
 
-<h1>Estadísticas</h1>
-<div class="rounded2">
+<div class="rounded">
+<h2>Estadísticas</h2>
 <div class="d_list">
     <div class="element">Uptime: {{ ke_data.stats.uptime|timesince }}</div>
     <div class="element">Páginas servidas: {{ ke_data.stats.served_pages }}</div>
@@ -13,12 +13,24 @@
 
 <br/>
 
-<h1>Datos en memoria:</h1>
-<div class="rounded2">
+<div class="rounded">
+<h2>Datos en memoria:</h2>
 <div class="d_list">
     <div class="element">Usuarios: {{ ke_data.stats.users_m }}</div>
     <div class="element">Comunidades: {{ ke_data.stats.communities_m }}</div>
     <div class="element">Preguntas: {{ ke_data.stats.questions_m }}</div>
+    <div class="element">Búsquedas: {{ ke_data.stats.searches }}</div>
+</div>
+</div>
+
+<br/>
+
+<div class="rounded">
+<h2>Búsquedas:</h2>
+<div class="d_list">
+{% for s in searches %}
+    <div class="element">{{ s[0] }} ({{ s[1] }})</div>
+{% endfor %}
 </div>
 </div>
 

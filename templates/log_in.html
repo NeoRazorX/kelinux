@@ -56,7 +56,7 @@
 <tr>
 <td valign="top">
     <div class="rounded2">
-    <h2>Datos de usuario:</h2>
+    <h2>Tus datos de usuario:</h2>
     <form action="/log_in" method="POST">
     <input type="hidden" name="option" value="update"/>
     <table>
@@ -95,8 +95,18 @@
 </td>
 </tr>
 </table>
+
 <div class="rounded">
-    <h2>Preguntas:</h2>
+    <h2>Eres miembro de:</h2>
+    <div class="d_list">
+    {% for c in ke_data.user.communities %}
+        <div class="element_c" onclick="jump2url('{{ c.get_link() }}')">{{ c.name }} ({{ c.num_users }})</div>
+    {% endfor %}
+    </div>
+</div>
+
+<div class="rounded">
+    <h2>Tus preguntas:</h2>
     {% for q in ke_data.user.questions %}
         <div class="reward">{{ q.reward }}</div>
         <div class="chat_msg_c" onclick="jump2url('{{ q.get_link() }}')">
