@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import cherrypy, os, hashlib, random, re, cgi
+import cherrypy, hashlib, random, re, cgi, smtplib
 from sqlalchemy import create_engine, Table, Column, ForeignKey, BigInteger, Integer, String, Boolean, Text, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, backref
 from datetime import datetime, timedelta
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from ke_config import *
 
 # iniciamos la clase declarativa para poder crear clases ya mapeadas
@@ -44,7 +46,7 @@ class Ke_user(Base):
         self.last_log_in = datetime.now()
     
     def exists(self):
-        if self.email != '' and self.password != '':
+        if self.email != '' and self.nick != '':
             return True
         else:
             return False
@@ -240,6 +242,12 @@ class Ke_question(Base):
         else:
             return 'estado desconocido'
     
+    def is_solved(self):
+        if self.status > 10:
+            return True
+        else:
+            return False
+    
     def add_reward(self, p):
         try:
             v = int(p)
@@ -287,14 +295,6 @@ class Ke_answer(Base):
             return True
         else:
             return False
-    
-    def add_grade(self, p):
-        try:
-            v = int(p)
-        except:
-            v = 0
-        if v != 0:
-            self.grade += v
     
     def get_link(self, full=False):
         if full:
@@ -384,7 +384,7 @@ class Super_cache:
         return Ke_session.query(Ke_user).order_by(Ke_user.nick).all()
     
     def give_points2user(self, u):
-        if u.logged_on and random.randint(0, 99) == 0:
+        if u.exists() and u.logged_on and random.randint(0, 99) == 0:
             u.add_points(+1)
             try:
                 Ke_session.add(u)
@@ -439,7 +439,7 @@ class Super_cache:
         return Ke_session.query(Ke_question).order_by(Ke_question.id.desc()).all()
     
     def increase_reward2question(self, q):
-        if q.exists() and random.randint(0, 99) == 0:
+        if q.exists() and not q.is_solved() and random.randint(0, 99) == 0:
             q.add_reward(1)
             try:
                 Ke_session.add(q)
@@ -515,12 +515,32 @@ class Super_cache:
         self.stats['served_pages'] += 1
 
 
+class Ke_mail:
+    def send(self, email='', subject='', msg=''):
+        if email != '' and msg != '':
+            server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+            server.ehlo()
+            if SMTP_TTLS:
+                server.starttls()
+            server.ehlo()
+            server.login(SMTP_USER, SMTP_PASS)
+            mmsg = MIMEMultipart("alternative")
+            mmsg['Subject'] = subject
+            mmsg['From'] = APP_ADMIN_EMAIL
+            mmsg['To'] = email
+            part1 = MIMEText(msg, "plain", "utf-8")
+            mmsg.attach(part1)
+            server.sendmail(APP_ADMIN_EMAIL, email, mmsg.as_string().encode('ascii'))
+            server.quit()
+
+
 class Ke_web:
     sc = Super_cache()
     current_user = Ke_user()
     ke_data = ke_data = {
         'appname': APP_NAME,
         'appdomain': APP_DOMAIN,
+        'appadminemail': APP_ADMIN_EMAIL,
         'user': current_user
     }
     
@@ -628,6 +648,8 @@ class Ke_web:
             self.ke_data['errormsg'] = 'introduce un email'
         elif nick == '':
             self.ke_data['errormsg'] = 'introduce un nombre de usuario'
+        elif not self.current_user.logged_on:
+            self.ke_data['errormsg'] = u'debes iniciar sesión'
         elif not self.current_user.set_email(email):
             self.ke_data['errormsg'] = u'el email no es válido o ya existe'
         elif not self.current_user.set_nick(nick):
@@ -655,12 +677,52 @@ class Ke_web:
         self.set_cookie('log_key', '', 0)
         self.set_current_user( Ke_user() )
     
+    def send_mail_new_user_password(self, email=''):
+        if email != '':
+            user = self.sc.get_user_by_email(email)
+            if user.exists():
+                kmail = Ke_mail()
+                kmail.send(user.email, u"Solicitud de cambio de contraseña", u"Hola, te enviamos este email porque has solicitado recordar la contraseña del usuario de %s asociado a esta cuenta de email. Si has sido tú, haz clic en este enlace %s, de lo contrario no te preocupes, sin este email nadie puede cambiar tus datos. Bye!" % (APP_DOMAIN, 'http://'+APP_DOMAIN+'/new_password/'+str(user.id)+'/'+user.password))
+                return u"<div class='message'>se ha enviado un email con las instrucciones</div>"
+            else:
+                return u"<div class='error'>el email que has proporcionado no está en nuestra base de datos</div>"
+        else:
+            return u"<div class='error'>no has introducido ningún email</div>"
+    
+    def new_user_password(self, idu='', passwd=''):
+        errormsg = ''
+        if id != '' and passwd != '':
+            user = self.sc.get_user_by_id(idu)
+            if user.exists():
+                if user.password == passwd:
+                    new_passwd = str(random.randint(0, 999999))
+                    user.password = hashlib.sha1( new_passwd ).hexdigest()
+                    try:
+                        Ke_session.add(user)
+                        Ke_session.commit()
+                    except:
+                        Ke_session.rollback()
+                        errormsg = 'error al guardar el usuario en la base de datos'
+                    if errormsg == '':
+                        kmail = Ke_mail()
+                        kmail.send(user.email, u"Nueva contraseña", u"Hola, esta es tu nueva contraseña: '%s'. Usala para entrar en %s y cambiala enseguida." % (new_passwd, 'http://www.'+APP_DOMAIN))
+                        errormsg = u'Te hemos enviado otro email con la nueva contraseña'
+                else:
+                    errormsg = 'Datos incorrectos'
+            else:
+                errormsg = 'El usuario no existe'
+        else:
+            errormsg = 'No, no, no.'
+        return errormsg
+    
     def new_community(self, n='', d=''):
         community = Ke_community()
         if n == '':
             self.ke_data['errormsg'] = 'introduce un nombre para la comunidad'
         elif d == '':
             self.ke_data['errormsg'] = u'introduce una descripción para la comunidad'
+        elif not self.current_user.logged_on:
+            self.ke_data['errormsg'] = u'debes iniciar sesión'
         elif self.current_user.points < 1:
             self.ke_data['errormsg'] = 'no tienes suficientes puntos'
         else:
@@ -680,6 +742,7 @@ class Ke_web:
                         Ke_session.commit()
                     except:
                         Ke_session.rollback()
+                        self.current_user.add_points(1)
                         self.ke_data['errormsg'] = 'error al guardar la comunidad en la base de datos'
         return community
     
@@ -687,6 +750,8 @@ class Ke_web:
         question = Ke_question()
         if text == '':
             self.ke_data['errormsg'] = 'introduce algo de texto!'
+        elif not self.current_user.logged_on:
+            self.ke_data['errormsg'] = u'debes iniciar sesión'
         else:
             if not question.set_text(text):
                 self.ke_data['errormsg'] = u'introduce texto válido'
@@ -706,15 +771,19 @@ class Ke_web:
         if self.current_user.logged_on:
             if self.current_user.points > 0:
                 question = self.sc.get_question_by_id(idq)
-                if question:
-                    question.add_reward(1)
-                    self.current_user.add_points(-1)
-                    try:
-                        Ke_session.commit()
-                        return 'OK;'+str(question.reward)+';'+str(self.current_user.points)
-                    except:
-                        Ke_session.rollback()
-                        return u'Error al procesar la petición'
+                if question.exists():
+                    if not question.is_solved():
+                        question.add_reward(1)
+                        self.current_user.add_points(-1)
+                        try:
+                            Ke_session.commit()
+                            return 'OK;'+str(question.reward)+';'+str(self.current_user.points)
+                        except:
+                            Ke_session.rollback()
+                            self.current_user.add_points(1)
+                            return u'Error al procesar la petición'
+                    else:
+                        return u'No puedes añadir recompensa a un pregunta solucionada'
                 else:
                     return 'Pregunta no encontrada'
             else:
@@ -747,23 +816,89 @@ class Ke_web:
         question = self.sc.get_question_by_id(idq)
         if question.exists():
             if text != '':
-                answer = Ke_answer()
-                if answer.set_text(text):
-                    answer.user = self.current_user
-                    answer.question = question
-                    question.num_answers = len( question.answers )
-                    if question.status == 0:
-                        question.set_status(1)
-                    try:
-                        Ke_session.add(answer)
-                        Ke_session.add(question)
-                        Ke_session.commit()
-                        self.ke_data['message'] = 'respuesta guardada correctamente'
-                    except:
-                        Ke_session.rollback()
-                        self.ke_data['errormsg'] = 'error al guardar la respuesta en la base de datos'
+                if self.current_user.logged_on:
+                    answer = Ke_answer()
+                    if answer.set_text(text):
+                        answer.user = self.current_user
+                        answer.question = question
+                        question.num_answers = len( question.answers )
+                        if question.status == 0:
+                            question.set_status(1)
+                        try:
+                            Ke_session.add(answer)
+                            Ke_session.add(question)
+                            Ke_session.commit()
+                            self.ke_data['message'] = 'respuesta guardada correctamente'
+                        except:
+                            Ke_session.rollback()
+                            self.ke_data['errormsg'] = 'error al guardar la respuesta en la base de datos'
+                    else:
+                        self.ke_data['errormsg'] = u'introduce texto válido'
                 else:
-                    self.ke_data['errormsg'] = u'introduce texto válido'
+                    self.ke_data['errormsg'] = u'debes iniciar sesión'
         else:
             self.ke_data['errormsg'] = 'pregunta no encontrada'
         return question
+    
+    def new_vote2answer(self, ida='', points=1):
+        message = ''
+        answer = Ke_session.query(Ke_answer).filter_by(id=ida).first()
+        if answer:
+            if self.current_user.exists() and self.current_user.logged_on:
+                if self.current_user.points > 0:
+                    if self.current_user.id != answer.user.id:
+                        self.current_user.add_points(-1)
+                        if points > 0:
+                            answer.grade += 1
+                            message = 'OK;'+ida+';'+str(answer.grade)+';'+str(self.current_user.points)
+                        elif points < 0:
+                            answer.grade -= 1
+                            message = 'OK;'+ida+';'+str(answer.grade)+';'+str(self.current_user.points)
+                        else:
+                            self.current_user.add_points(1)
+                            message = u'voto incorrecto'
+                        try:
+                            Ke_session.add(self.current_user)
+                            Ke_session.add(answer)
+                            Ke_session.commit()
+                        except:
+                            Ke_session.rollback()
+                            message = u'Error al guardar los datos en la base de datos'
+                    else:
+                        message = u'¿Pretendes votarte a ti mismo?'
+                else:
+                    message = u'No tienes suficientes puntos'
+            else:
+                message = u'Debes iniciar sesión'
+        else:
+            message = u'respuesta no encontrada'
+        return message
+    
+    def mark_answer_as_solution(self, ida=''):
+        message = ''
+        answer = Ke_session.query(Ke_answer).filter_by(id=ida).first()
+        if answer:
+            if self.current_user.exists() and self.current_user.logged_on:
+                if self.current_user == answer.user or self.current_user.is_admin():
+                    if not answer.question.is_solved():
+                        answer.grade += answer.question.reward
+                        answer.question.reward = 0
+                        answer.question.set_status(11)
+                        self.current_user.add_points(5)
+                        try:
+                            Ke_session.add(answer)
+                            Ke_session.add(self.current_user)
+                            Ke_session.commit()
+                            message = u'OK'
+                        except:
+                            Ke_session.rollback()
+                            message = u'Error al guardar los datos en la base de datos'
+                    else:
+                        message = u'La pregunta ya está marcada como solucionada'
+                else:
+                    message = u'Tu no puedes hacer esto, chaval!'
+            else:
+                message = u'Debes iniciar sesión'
+        else:
+            message = u'respuesta no encontrada'
+        return message

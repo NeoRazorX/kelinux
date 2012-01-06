@@ -6,11 +6,28 @@
 <div class="message">{{ ke_data.message }}</div>
 {% endif %}
 
+<div class="answers">
 {% for a in question.answers %}
-    <div class="reward">{{ a.grade }}</div>
-    <div class="chat_msg">
+<div class="{{ loop.cycle('answer_box', 'answer_box2') }}">
+    <table class="grade">
+    <tr>
+        <td rowspan="2"><span class="grade" id="answer_grade_{{ a.id }}">{{ a.grade }}</span></td>
+        <td class="add_grade" onclick="vote_answer('{{ a.id }}', true)" title="votar positivamente">+</td>
+    </tr>
+    <tr>
+        <td class="minus_grade" onclick="vote_answer('{{ a.id }}', false)" title="votar negativamente">-</td>
+    </tr>
+    {% if ke_data.user.id == question.user.id or ke_data.user.is_admin() %}
+    <tr>
+        <td colspan="2" class="mark_solution" onclick="mark_solution('{{ a.id }}')" title="marcar como solución válida">es la solución</td>
+    </tr>
+    {% endif %}
+    </table>
+    <div class="answer">
         <span class="nick_c" onclick="jump2url('{{ a.user.get_link() }}')">{{ a.user.nick }}</span>
         <span class="date">{{ a.created|timesince }}</span>
-        {{ a.text|linebreaks }}
+        <div class="long_text">{{ a.text|safe|urlize|linebreaks }}</div>
     </div>
+</div>
 {% endfor %}
+</div>

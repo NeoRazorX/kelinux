@@ -3,17 +3,20 @@
 
 import re
 from datetime import datetime, timedelta
-from jinja2 import evalcontextfilter, Markup, escape
 
-_paragraph_re = re.compile(r'(?:\r\n|\r|\n){2,}')
-
-@evalcontextfilter
-def linebreaks(eval_ctx, value):
-    result = u'\n\n'.join(u'<p>%s</p>' % p.replace('\n', '<br>\n')
-                          for p in _paragraph_re.split(escape(value)))
-    if eval_ctx.autoescape:
-        result = Markup(result)
-    return result
+def linebreaks(value):
+    bbdata = [
+        (r'\[b\](.+?)\[/b\]', r'<b>\1</b>'),
+        (r'\[i\](.+?)\[/i\]', r'<i>\1</i>'),
+        (r'\[u\](.+?)\[/u\]', r'<u>\1</u>'),
+        (r'\[code\](.+?)\[/code\]', r'<div class="code">\1</div>'),
+        (r'\[big\](.+?)\[/big\]', r'<big>\1</big>'),
+        (r'\[small\](.+?)\[/small\]', r'<small>\1</small>')
+    ]
+    for bbset in bbdata:
+        p = re.compile(bbset[0], re.DOTALL)
+        value = p.sub(bbset[1], value)
+    return value.replace('\n', '<br />')
 
 def timesince(t):
     time_str = 'ahora mismo'
@@ -39,3 +42,4 @@ def highlight_page(name, selection=''):
         return "class='selected'"
     else:
         return ''
+

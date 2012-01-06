@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os, cherrypy, simplejson
+import os, cherrypy
 from ke_config import *
 from ke_base import *
 from sqlalchemy import MetaData
@@ -25,6 +25,8 @@ env.filters['linebreaks'] = linebreaks
 # definimos la configuración de cherrypy
 cp_config = {
     'global': {
+        'server.socket_host': '0.0.0.0',
+        'server.socket_port': APP_PORT,
         'tools.encode.on': True,
         'toots.encode.encoding': 'utf-8',
         'tools.decode.on': True
@@ -74,6 +76,14 @@ class Main_web(Ke_web):
         return tmpl.render(ke_data=self.ke_data)
     
     @cherrypy.expose
+    def new_password(self, email='', passwd=''):
+        self.first_step('new_password')
+        if cherrypy.request.method == 'POST':
+            return self.send_mail_new_user_password(email)
+        else:
+            return self.new_user_password(email, passwd)
+    
+    @cherrypy.expose
     def finder(self, query=''):
         self.first_step('create_msg')
         cherrypy.response.headers['Content-Type'] = 'text/plain'
@@ -107,9 +117,12 @@ class Main_web(Ke_web):
     @cherrypy.expose
     def community(self, name=''):
         self.first_step('community')
-        tmpl = env.get_template('community.html')
-        return tmpl.render(community=self.sc.get_community_by_name(name),
-                           ke_data=self.ke_data)
+        community = self.sc.get_community_by_name(name)
+        if community.exists():
+            tmpl = env.get_template('community.html')
+            return tmpl.render(community=community, ke_data=self.ke_data)
+        else:
+            raise cherrypy.HTTPRedirect('/community_list')
     
     @cherrypy.expose
     def join_community(self, name=''):
@@ -143,9 +156,12 @@ class Main_web(Ke_web):
     @cherrypy.expose
     def question(self, idq=''):
         self.first_step('question')
-        tmpl = env.get_template('question.html')
-        return tmpl.render(question=self.sc.get_question_by_id(idq),
-                           ke_data=self.ke_data)
+        question = self.sc.get_question_by_id(idq)
+        if question.exists():
+            tmpl = env.get_template('question.html')
+            return tmpl.render(question=question, ke_data=self.ke_data)
+        else:
+            raise cherrypy.HTTPRedirect('/question_list')
     
     @cherrypy.expose
     def question_reward(self, idq=''):
@@ -161,6 +177,18 @@ class Main_web(Ke_web):
                            ke_data=self.ke_data)
     
     @cherrypy.expose
+    def vote_answers(self, option='', ida=''):
+        self.first_step('question')
+        if option == 'positive':
+            return self.new_vote2answer(ida, 1)
+        elif option == 'negative':
+            return self.new_vote2answer(ida, -1)
+        elif option == 'solution':
+            return self.mark_answer_as_solution(ida)
+        else:
+            return u'opción desconocida'
+    
+    @cherrypy.expose
     def user_list(self):
         self.first_step('user_list')
         tmpl = env.get_template('user_list.html')
@@ -170,9 +198,12 @@ class Main_web(Ke_web):
     @cherrypy.expose
     def user(self, idu=''):
         self.first_step('user')
-        tmpl = env.get_template('user.html')
-        return tmpl.render(user=self.sc.get_user_by_id(idu),
-                           ke_data=self.ke_data)
+        user = self.sc.get_user_by_id(idu)
+        if user.exists():
+            tmpl = env.get_template('user.html')
+            return tmpl.render(user=user, ke_data=self.ke_data)
+        else:
+            raise cherrypy.HTTPRedirect('/user_list')
     
     @cherrypy.expose
     def stats(self):

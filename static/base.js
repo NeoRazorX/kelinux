@@ -57,7 +57,7 @@ function process_create_msg()
     }
     else
     {
-        error_create.innerHTML = 'cargando...';
+        error_create.innerHTML = '<div class="message">cargando...</div>';
     }
 }
 
@@ -131,11 +131,44 @@ function process_finder_req()
     }
     else
     {
-        finder_ressults.innerHTML = 'cargando...';
+        finder_ressults.innerHTML = '<div class="message">cargando...</div>';
     }
 }
 
 function close_finder_ressults()
 {
     document.getElementById('finder_ressults').innerHTML = '';
+}
+
+var req_new_password;
+
+function send_me_a_new_password()
+{
+    email = prompt('Introduce el email que usaste para registrarte:');
+    req_new_password = new XMLHttpRequest();
+    if(req_new_password)
+    {
+        req_new_password.onreadystatechange = process_new_password;
+        req_new_password.open("POST", "/new_password", true);
+        var formData = new FormData();
+        formData.append("email", email);
+        req_new_password.send(formData);
+    }
+    else
+    {
+        alert("Imposible crear la peticion!");
+    }
+}
+
+function process_new_password()
+{
+    var npmsg = document.getElementById('new_password_msg');
+    if(req_new_password.readyState == 4)
+    {
+        npmsg.innerHTML = req_new_password.responseText;
+    }
+    else
+    {
+        npmsg.innerHTML = '<div class="message">cargando...</div>';
+    }
 }

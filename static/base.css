@@ -1,6 +1,6 @@
 body {
     margin: 0px;
-    background-color: #f1f1f1;
+    background-color: #e1e1e1;
     font-family: Arial, Helvetica, sans-serif;
     color: black;
     font-size: 13px;
@@ -50,7 +50,9 @@ table#header_menu {
     width: 100%;
     height: 45px;
     padding: 0px;
-    border-bottom: 1px dotted #cccccc;
+    background-color: #3768B8;
+    border-bottom: 1px solid #cccccc;
+    color: white;
 }
 
 table#header_menu td#logo {
@@ -62,7 +64,7 @@ table#header_menu td#logo {
 }
 
 table#header_menu td#logo a {
-    color: black;
+    color: white;
 }
 
 table#header_menu td#finder {
@@ -70,9 +72,9 @@ table#header_menu td#finder {
 }
 
 table#header_menu td#finder input#b_find {
-    background-color: #4A8BF5;
+    background-color: #333333;
     color: white;
-    border: 0px solid #4A8BF5;
+    border: 0px solid #333333;
 }
 
 table#header_menu td#stats {
@@ -94,7 +96,8 @@ div#left_menu {
     padding-top: 20px;
     text-align: center;
     overflow: auto;
-    border-right: 1px dotted #cccccc;
+    background-color: white;
+    border-right: 1px solid #cccccc;
 }
 
 div#left_menu a#b_create {
@@ -262,6 +265,8 @@ h1:first-letter, h2:first-letter, div.error:first-letter, div.message:first-lett
 
 div.d_list div.element, div.d_list div.element_c {
     width: 150px;
+    padding-top: 3px;
+    padding-bottom: 3px;
     display: inline-block;
 }
 
@@ -272,6 +277,10 @@ div.d_list div.element:hover {
 div.d_list div.element_c:hover {
     background-color: #D8DFEA;
     cursor: pointer;
+}
+
+div.d_list div.element:first-letter, div.d_list div.element_c:first-letter {
+    text-transform: capitalize;
 }
 
 div.rounded, div.rounded2 {
@@ -289,6 +298,19 @@ div.rounded, div.rounded2 {
 
 div.rounded2 {
     display: table;
+}
+
+div#finder_ressults div.rounded {
+    border: 2px solid #3768B8;
+}
+
+div#question_info {
+    min-height: 100px;
+}
+
+div.long_text {
+    padding-top: 5px;
+    padding-bottom: 5px;
 }
 
 div.chat_msg, div.chat_msg_c {
@@ -369,6 +391,95 @@ div.reward2 a {
     color: black;
 }
 
+div.answers {
+    display: table;
+    width: 100%;
+}
+
+div.answer_box, div.answer_box2 {
+    display: table-row;
+}
+
+div.answer_box2 {
+    background-color: #D8DFEA;
+}
+
+table.grade {
+    padding: 5px;
+    margin-right: 5px;
+    text-align: center;
+    display: table-cell;
+    width: 90px;
+}
+
+table.grade td {
+    color: transparent;
+    font-weight: bold;
+}
+
+span.grade {
+    font-size: 20px;
+    color: black;
+}
+
+table.grade td.add_grade, table.grade td.minus_grade {
+    width: 20px;
+    border-top-left-radius: 2px 2px;
+    border-top-right-radius: 2px 2px;
+    border-bottom-left-radius: 2px 2px;
+    border-bottom-right-radius: 2px 2px;
+}
+
+table.grade td.mark_solution {
+    padding-left: 3px;
+    padding-right: 3px;
+    border-top-left-radius: 2px 2px;
+    border-top-right-radius: 2px 2px;
+    border-bottom-left-radius: 2px 2px;
+    border-bottom-right-radius: 2px 2px;
+}
+
+table.grade:hover td.add_grade, table.grade:hover td.minus_grade, table.grade:hover td.mark_solution {
+    background-color: #333333;
+    color: white;
+}
+
+table.grade td.add_grade:hover, table.grade td.minus_grade:hover, table.grade td.mark_solution:hover {
+    cursor: pointer;
+}
+
+table.grade td.add_grade:hover {
+    background-color: green;
+}
+
+table.grade td.minus_grade:hover {
+    background-color: red;
+}
+
+table.grade td.mark_solution:hover {
+    background-color: #4A8BF5;
+}
+
+div.answer {
+    display: table-cell;
+    vertical-align: top;
+    padding: 5px;
+}
+
+div.code {
+    border: 1px dashed #333333;
+    padding: 5px;
+    margin: 5px;
+}
+
+big {
+    font-size: 22px;
+}
+
+small {
+    font-size: 11px;
+}
+
 table#chat_form_table {
     width: 100%;
     margin-bottom: 10px;
@@ -394,6 +505,11 @@ div#chat_log table td {
     vertical-align: top;
 }
 
-div#chat_log table td#chat_user_list {
-    width: 160px;
+td.user_list {
+    vertical-align: top;
+    width: 170px;
+}
+
+div#copyright {
+    text-align: center;
 }

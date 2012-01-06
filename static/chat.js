@@ -28,7 +28,7 @@ function process_chat_log()
     }
     else
     {
-        chat_log.innerHTML = 'cargando...';
+        chat_log.innerHTML = '<div class="message">cargando...</div>';
     }
 }
 

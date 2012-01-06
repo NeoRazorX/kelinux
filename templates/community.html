@@ -1,19 +1,33 @@
 {% include "header.html" %}
 
+<script type="text/javascript" src="/static/community.js"></script>
+
 <div class="rounded">
     <h2>{{ community.name }}</h2>
     <div class="chat_msg">
-        {{ community.description }}
+        {{ community.description|safe|urlize }}
         <span class="date">{{ community.created|timesince }}</span>
         <span class="tag">Usuarios: {{ community.num_users }}</span>
     </div>
     <form action="/join_community">
-        <input type="hidden" name="name" value="{{ community.name }}"/>
+    <input type="hidden" name="name" value="{{ community.name }}"/>
+    <table width="100%">
+    <tr>
+        <td>
         {% if community in ke_data.user.communities %}
             <input type="submit" value="abandonar"/> Eres miembro de esta comunidad
         {% else %}
             <input type="submit" value="unirme"/> No formas parte de esta comunidad
         {% endif %}
+        </td>
+        <td align="right">
+        {% if ke_data.user.is_admin() %}
+            <input type="button" name="remove" value="borrar" onclick="remove_community('{{ community.id }}')"/>
+            <input type="button" name="edit" value="editar" onclick="edit_community('{{ community.id }}')"/>
+        {% endif %}
+        </td>
+    </tr>
+    </table>
     </form>
 </div>
 
@@ -25,7 +39,7 @@
         {% for q in community.questions %}
             <div class="reward">{{ q.reward }}</div>
             <div class="chat_msg_c" onclick="jump2url('{{ q.get_link() }}')">
-                <span>{{ q.created }}</span>
+                <span class="nick">{{ q.user.nick }}</span>
                 <span class="date">{{ q.updated|timesince }}</span>
                 <span class="tag">{{ q.num_answers }} respuestas</span>
                 <span class="tag">{{ q.get_status() }}</span>
@@ -36,7 +50,7 @@
         </div>
     </div>
     </td>
-    <td valign="top">
+    <td class="user_list">
     <div class="rounded">
         <h2>Miembros:</h2>
         <div class="d_list">

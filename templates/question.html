@@ -2,15 +2,14 @@
 
 <script type="text/javascript" src="/static/question.js"></script>
 
-<div class="rounded">
+<div class="rounded" id="question_info">
     <h2>{{ question.get_status() }}</h2>
     <div class="reward2">
         <span id="question_reward">{{ question.reward }}</span>
         <br/>
-        <a href="#" onclick="add_reward()">+1 punto</a>
+        <a href="#" onclick="add_reward('{{ question.id }}')" title="añadir un punto a la recompensa">+1 punto</a>
     </div>
-    <div>{{ question.text|linebreaks }}</div>
-    <div class="chat_msg">
+    <div>
         <span class="nick_c" onclick="jump2url('{{ question.user.get_link() }}')">{{ question.user.nick }}</span>
         {% for c in question.communities %}
             <span class="community_c" onclick="jump2url('{{ c.get_link() }}')">{{ c.name }}</span>
@@ -18,17 +17,89 @@
         <span class="date">{{ question.updated|timesince }}</span>
         <span class="tag">{{ question.num_answers }} respuestas</span>
     </div>
+    <div class="long_text">{{ question.text|safe|urlize|linebreaks }}</div>
+    <div class="d_right">
+        <form>
+        {% if ke_data.user.is_admin() %}
+            <input type="button" name="remove" value="borrar" onclick="remove_question('{{ question.id }}')"/>
+        {% endif %}
+        {% if ke_data.user.id == question.user.id or ke_data.user.is_admin() %}
+            <input type="button" name="edit" value="editar" onclick="edit_question('{{ question.id }}')"/>
+        {% endif %}
+        </form>
+    </div>
 </div>
 
 <div class="rounded">
     <h2>Respuestas:</h2>
     <div id="question_answers"></div>
     
-    <form name="f_answer" onsubmit="send_answer(); return false">
+    <form name="f_answer" onsubmit="send_answer('{{ question.id }}'); return false">
         <input type="hidden" name="idq" value="{{ question.id }}"/>
         <textarea name="text" rows="6"></textarea>
         <input type="submit" value="enviar"/>
     </form>
 </div>
+
+<table width="100%">
+<tr>
+    <td valign="top">
+    <div class="rounded">
+        <h2>Código soportado:</h2>
+        <table>
+        <tr>
+            <td align="right">[b]texto[/b]</td>
+            <td>=</td>
+            <td><b>texto</b></td>
+        </tr>
+        <tr>
+            <td align="right">[i]texto[/i]</td>
+            <td>=</td>
+            <td><i>texto</i></td>
+        </tr>
+        <tr>
+            <td align="right">[u]texto[/u]</td>
+            <td>=</td>
+            <td><u>texto</u></td>
+        </tr>
+        <tr>
+            <td align="right">[code]texto[/code]</td>
+            <td>=</td>
+            <td><div class="code">texto</div></td>
+        </tr>
+        <tr>
+            <td align="right">[big]texto[/big]</td>
+            <td>=</td>
+            <td><big>texto</big></td>
+        </tr>
+        <tr>
+            <td align="right">[small]texto[/small]</td>
+            <td>=</td>
+            <td><small>texto</small></td>
+        </tr>
+        </table>
+    </div>
+    </td>
+    <td valign="top">
+    <div class="rounded">
+        <h2>Ayuda:</h2>
+        <ul>
+            <li>El número que aparece dentro del recuadro verde es <b>la recompensa</b> de la pregunta.
+            Si la pregunta te interesa puedes añadir uno a uno los puntos que quieras,
+            tan solo tienes que hacer clic sobre el enlace <b>+1 punto</b>.</li>
+            <li>El número que aparece a la izquierda de cada respuesta es su <b>valoración</b>.
+            Si una respuesta te parece buena puede votarla positivamente pulsando la flecha hacia arriva,
+            el usuario será premiado con <b>1 punto</b>.
+            Si por el contrario te parece mala, que no aporta nada o que es ofensiva, puede votarla
+            negativamente pulsando la flecha hacia abajo.</li>
+            <li>Si eres el <b>creador de la pregunta</b> puedes <b>marcar la respuesta</b> a tu juicio <b>correcta</b>
+            simplemente haciendo click sobre el icono en forma de "v", en la parte más a la izquierda de la respuesta.
+            <u>La recompensa de la pregunta será entregada a ese usuario</u> en forma de puntos y <u>la pregunta
+            quedará marcada como solucionada</u>.</li>
+        </ul>
+    </div>
+    </td>
+</tr>
+</table>
 
 {% include "footer.html" %}
