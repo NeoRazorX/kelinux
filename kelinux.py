@@ -7,6 +7,11 @@ from ke_base import *
 from sqlalchemy import MetaData
 from jinja2 import Environment, FileSystemLoader
 from jinja2_custom_filters import *
+from cherrypy.process.plugins import PIDFile, Daemonizer
+from datetime import datetime
+
+# nos guardamos el path
+Ke_current_path = os.getcwd()
 
 # comprobamos la estructura de tablas de la base de datos
 Ke_user().metadata.create_all(Ke_engine)
@@ -15,7 +20,7 @@ Ke_question().metadata.create_all(Ke_engine)
 Ke_answer().metadata.create_all(Ke_engine)
 
 # cargamos las templates para jinja2
-env = Environment(loader=FileSystemLoader('templates'))
+env = Environment(loader=FileSystemLoader(Ke_current_path+'/templates'))
 
 # añadimos los filtros personalizados
 env.filters['timesince'] = timesince
@@ -27,21 +32,27 @@ cp_config = {
     'global': {
         'server.socket_host': '0.0.0.0',
         'server.socket_port': APP_PORT,
+        'log.access_file': Ke_current_path+'/logs/kelinux_access.'+str(datetime.today().isoformat(' '))+'.log',
+        'log.error_file': Ke_current_path+'/logs/kelinux_error.'+str(datetime.today().isoformat(' '))+'.log',
         'tools.encode.on': True,
         'toots.encode.encoding': 'utf-8',
         'tools.decode.on': True
     },
     '/favicon.ico': {
         'tools.staticfile.on': True,
-        'tools.staticfile.filename': os.getcwd()+'/img/favicon.ico',
+        'tools.staticfile.filename': Ke_current_path+'/img/favicon.ico',
+    },
+    '/robots.txt': {
+        'tools.staticfile.on': True,
+        'tools.staticfile.filename': Ke_current_path+'/robots.txt',
     },
     '/static': {
         'tools.staticdir.on': True,
-        'tools.staticdir.dir': os.path.join(os.getcwd(), 'static')
+        'tools.staticdir.dir': os.path.join(Ke_current_path, 'static')
     },
     '/img': {
         'tools.staticdir.on': True,
-        'tools.staticdir.dir': os.path.join(os.getcwd(), 'img')
+        'tools.staticdir.dir': os.path.join(Ke_current_path, 'img')
     }
 }
 
@@ -78,10 +89,15 @@ class Main_web(Ke_web):
     @cherrypy.expose
     def new_password(self, email='', passwd=''):
         self.first_step('new_password')
+        errormsg = ''
         if cherrypy.request.method == 'POST':
-            return self.send_mail_new_user_password(email)
+            errormsg = self.send_mail_new_user_password(email)
         else:
-            return self.new_user_password(email, passwd)
+            errormsg = self.new_user_password(email, passwd)
+        if errormsg == '':
+            raise cherrypy.HTTPRedirect('/')
+        else:
+            return errormsg
     
     @cherrypy.expose
     def finder(self, query=''):
@@ -115,12 +131,32 @@ class Main_web(Ke_web):
                            ke_data=self.ke_data)
     
     @cherrypy.expose
-    def community(self, name=''):
+    def community(self, name='', order='updated', num=0):
         self.first_step('community')
         community = self.sc.get_community_by_name(name)
         if community.exists():
+            self.set_page_description( community.description )
+            try:
+                num = int(num)
+            except:
+                num = 0
+            if num < 0:
+                num = 0
+            if order == 'updated':
+                questions = Ke_session.query(Ke_question).join((Ke_community, Ke_question.communities)).filter(Ke_question.communities.any(Ke_community.id==community.id)).order_by(Ke_question.updated.desc())[num:num+50]
+            elif order == 'reward':
+                questions = Ke_session.query(Ke_question).join((Ke_community, Ke_question.communities)).filter(Ke_question.communities.any(Ke_community.id==community.id)).order_by(Ke_question.reward.desc())[num:num+50]
+            elif order == 'status':
+                questions = Ke_session.query(Ke_question).join((Ke_community, Ke_question.communities)).filter(Ke_question.communities.any(Ke_community.id==community.id)).order_by(Ke_question.status)[num:num+50]
+            else:
+                questions = Ke_session.query(Ke_question).join((Ke_community, Ke_question.communities)).filter(Ke_question.communities.any(Ke_community.id==community.id)).order_by(Ke_question.id.desc())[num:num+50]
             tmpl = env.get_template('community.html')
-            return tmpl.render(community=community, ke_data=self.ke_data)
+            return tmpl.render(community=community,
+                               questions=questions,
+                               order=order,
+                               prevp=(num-50),
+                               nextp=(num+50),
+                               ke_data=self.ke_data)
         else:
             raise cherrypy.HTTPRedirect('/community_list')
     
@@ -147,17 +183,28 @@ class Main_web(Ke_web):
             raise cherrypy.HTTPRedirect('/log_in')
     
     @cherrypy.expose
-    def question_list(self):
+    def question_list(self, order='created', num=0):
         self.first_step('question_list')
+        try:
+            num = int(num)
+        except:
+            num = 0
+        if num < 0:
+            num = 0
         tmpl = env.get_template('question_list.html')
-        return tmpl.render(question_list=self.sc.get_all_questions(),
+        return tmpl.render(question_list=self.sc.get_all_questions(order, num),
+                           order=order,
+                           prevp=(num-50),
+                           nextp=(num+50),
                            ke_data=self.ke_data)
     
     @cherrypy.expose
     def question(self, idq=''):
         self.first_step('question')
+        self.run_onload('load_answers()')
         question = self.sc.get_question_by_id(idq)
         if question.exists():
+            self.set_page_description( question.get_resume() )
             tmpl = env.get_template('question.html')
             return tmpl.render(question=question, ke_data=self.ke_data)
         else:
@@ -170,11 +217,12 @@ class Main_web(Ke_web):
         return self.add_reward2question(idq)
     
     @cherrypy.expose
-    def answers(self, idq='', text=''):
+    def answers(self, idq='', order='grade', text=''):
         self.first_step('question')
+        question,answer = self.new_answer(idq, text)
+        answers = self.get_answers(idq, order)
         tmpl = env.get_template('answers.html')
-        return tmpl.render(question=self.new_answer(idq, text),
-                           ke_data=self.ke_data)
+        return tmpl.render(question=question, answer=answer, answers=answers, ke_data=self.ke_data)
     
     @cherrypy.expose
     def vote_answers(self, option='', ida=''):
@@ -196,12 +244,31 @@ class Main_web(Ke_web):
                            ke_data=self.ke_data)
     
     @cherrypy.expose
-    def user(self, idu=''):
+    def user(self, idu='', order='updated', num=0):
         self.first_step('user')
         user = self.sc.get_user_by_id(idu)
         if user.exists():
+            try:
+                num = int(num)
+            except:
+                num = 0
+            if num < 0:
+                num = 0
+            if order == 'updated':
+                questions = Ke_session.query(Ke_question).filter_by(user_id=user.id).order_by(Ke_question.updated.desc())[num:num+50]
+            elif order == 'reward':
+                questions = Ke_session.query(Ke_question).filter_by(user_id=user.id).order_by(Ke_question.reward.desc())[num:num+50]
+            elif order == 'status':
+                questions = Ke_session.query(Ke_question).filter_by(user_id=user.id).order_by(Ke_question.status)[num:num+50]
+            else:
+                questions = Ke_session.query(Ke_question).filter_by(user_id=user.id).order_by(Ke_question.id.desc())[num:num+50]
             tmpl = env.get_template('user.html')
-            return tmpl.render(user=user, ke_data=self.ke_data)
+            return tmpl.render(user=user,
+                               questions=questions,
+                               order=order,
+                               prevp=(num-50),
+                               nextp=(num+50),
+                               ke_data=self.ke_data)
         else:
             raise cherrypy.HTTPRedirect('/user_list')
     
@@ -215,6 +282,7 @@ class Main_web(Ke_web):
     @cherrypy.expose
     def chat_room(self, text=''):
         self.first_step('chat_room')
+        self.run_onload('load_chat_log()')
         if cherrypy.request.method == 'POST':
             if text != '':
                 self.sc.new_chat_msg(text, self.current_user.nick)
@@ -226,7 +294,25 @@ class Main_web(Ke_web):
         else:
             tmpl = env.get_template('chat_room.html')
             return tmpl.render(ke_data=self.ke_data)
+    
+    @cherrypy.expose
+    def sitemap(self):
+        self.first_step('sitemap')
+        questions = self.get_front_questions()
+        document = "Content-Type: text/xml\n\n"
+        document += "<?xml version='1.0' encoding='UTF-8'?>\n"
+        document += "<urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'>\n"
+        for q in questions:
+            document += "<url><loc>" + q.get_link() + "</loc><lastmod>" + str(q.created).split(' ')[0] + "</lastmod><changefreq>always</changefreq><priority>0.8</priority></url>\n"
+        document += "</urlset>\n"
+        return document
 
 if __name__ == "__main__":
+    if APP_RUN_AS_DAEMON:
+        d = Daemonizer(cherrypy.engine)
+        d.subscribe()
+        p = PIDFile(cherrypy.engine, Ke_current_path+"/kelinux.pid")
+        p.subscribe()
+        cp_config['global']['log.screen'] = False
     cherrypy.quickstart(Main_web(), config=cp_config)
     Ke_session.close()

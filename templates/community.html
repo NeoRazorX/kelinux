@@ -35,8 +35,16 @@
 <tr>
     <td valign="top">
     <div class="rounded">
-        <h2>Preguntas:</h2>
-        {% for q in community.questions %}
+        <h2>
+            Lista de preguntas:
+            <span>ordenar por:
+                <a href="{{ community.get_link() }}/created">creada</a> |
+                <a href="{{ community.get_link() }}/updated">modificada</a> |
+                <a href="{{ community.get_link() }}/reward">recompensa</a> |
+                <a href="{{ community.get_link() }}/status">estado</a>
+            </span>
+        </h2>
+        {% for q in questions %}
             <div class="reward">{{ q.reward }}</div>
             <div class="chat_msg_c" onclick="jump2url('{{ q.get_link() }}')">
                 <span class="nick">{{ q.user.nick }}</span>
@@ -47,10 +55,21 @@
                 {{ q.get_resume() }}
             </div>
         {% endfor %}
-        </div>
+        <table width="100%">
+        <tr>
+        {% if prevp >= 0 %}
+            <td><a href="{{ community.get_link() }}/{{ order }}/{{ prevp }}">anteriores</a></td>
+        {% endif %}
+        {% if questions|length == 50 %}
+            <td align="right"><a href="{{ community.get_link() }}/{{ order }}/{{ nextp }}">siguientes</a></td>
+        {% endif %}
+        </tr>
+        </table>
     </div>
     </td>
     <td class="user_list">
+    <div>{{ ke_data.adsenses|safe }}</div>
+    <br/>
     <div class="rounded">
         <h2>Miembros:</h2>
         <div class="d_list">

@@ -28,6 +28,12 @@ h2 {
     margin-bottom: 10px;
 }
 
+h2 span {
+    float: right;
+    font-weight: normal;
+    font-size: 15px;
+}
+
 input[type='submit'], input[type='button'] {
     text-transform: capitalize;
     font-variant: small-caps;
@@ -129,6 +135,7 @@ div#left_menu ul li {
     color: black;
     font-size: 15px;
     padding-left: 5px;
+    padding-right: 5px;
 }
 
 div#left_menu li:hover {
@@ -139,6 +146,10 @@ div#left_menu li:hover {
 div#left_menu li.selected {
     background-color: #4A8BF5;
     color: white;
+}
+
+div#left_menu ul li span {
+    float: right;
 }
 
 div#main_div {
@@ -305,12 +316,12 @@ div#finder_ressults div.rounded {
 }
 
 div#question_info {
-    min-height: 100px;
+    min-height: 240px;
 }
 
 div.long_text {
-    padding-top: 5px;
-    padding-bottom: 5px;
+    padding-top: 10px;
+    padding-bottom: 10px;
 }
 
 div.chat_msg, div.chat_msg_c {
@@ -460,10 +471,14 @@ table.grade td.mark_solution:hover {
     background-color: #4A8BF5;
 }
 
-div.answer {
+div.answer, div.answer_s {
     display: table-cell;
     vertical-align: top;
     padding: 5px;
+}
+
+div.answer_s {
+    border: 3px double #4A8BF5;;
 }
 
 div.code {
@@ -506,8 +521,9 @@ div#chat_log table td {
 }
 
 td.user_list {
+    text-align: right;
     vertical-align: top;
-    width: 170px;
+    width: 260px;
 }
 
 div#copyright {

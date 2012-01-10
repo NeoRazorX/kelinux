@@ -47,6 +47,8 @@ class ubufaq2kelinux:
                     usuario = self.ubufaq_user
                 elif not usuario.set_nick( email.split('@')[0] ):
                     usuario = self.ubufaq_user
+                elif not usuario.set_password( str(random.randint(0, 999999)) ):
+                    usuario = self.ubufaq_user
                 else:
                     for c in self.ubufaq_user.communities:
                         usuario.communities.append(c)

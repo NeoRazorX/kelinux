@@ -1,7 +1,15 @@
 {% include "header.html" %}
 
 <div class="rounded">
-    <h2>Lista de preguntas</h2>
+    <h2>
+        Lista de preguntas
+        <span>ordenar por:
+            <a href="/question_list/created">creada</a> |
+            <a href="/question_list/updated">modificada</a> |
+            <a href="/question_list/reward">recompensa</a> |
+            <a href="/question_list/status">estado</a>
+        </span>
+    </h2>
     {% for q in question_list %}
         <div class="reward">{{ q.reward }}</div>
         <div class="chat_msg_c" onclick="jump2url('{{ q.get_link() }}')">
@@ -13,6 +21,16 @@
             {{ q.get_resume() }}
         </div>
     {% endfor %}
+    <table width="100%">
+    <tr>
+    {% if prevp >= 0 %}
+        <td><a href="/question_list/{{ order }}/{{ prevp }}">anteriores</a></td>
+    {% endif %}
+    {% if question_list|length == 50 %}
+        <td align="right"><a href="/question_list/{{ order }}/{{ nextp }}">siguientes</a></td>
+    {% endif %}
+    </tr>
+    </table>
 </div>
 
 {% include "footer.html" %}

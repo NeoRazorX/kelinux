@@ -63,7 +63,11 @@ function process_create_msg()
 
 function create_community()
 {
-    req_create = new XMLHttpRequest();
+    if(window.XMLHttpRequest)
+        req_create = new XMLHttpRequest();
+    else
+        req_create = new ActiveXObject("Microsoft.XMLHTTP");
+    
     if(req_create)
     {
         req_create.onreadystatechange = process_create_msg;
@@ -82,7 +86,11 @@ function create_community()
 
 function create_question()
 {
-    req_create = new XMLHttpRequest();
+    if(window.XMLHttpRequest)
+        req_create = new XMLHttpRequest();
+    else
+        req_create = new ActiveXObject("Microsoft.XMLHTTP");
+    
     if(req_create)
     {
         req_create.onreadystatechange = process_create_msg;
@@ -107,7 +115,11 @@ var req_finder;
 
 function find_question()
 {
-    req_finder = new XMLHttpRequest();
+    if(window.XMLHttpRequest)
+        req_finder = new XMLHttpRequest();
+    else
+        req_finder = new ActiveXObject("Microsoft.XMLHTTP");
+    
     if(req_finder)
     {
         req_finder.onreadystatechange = process_finder_req;
@@ -145,7 +157,12 @@ var req_new_password;
 function send_me_a_new_password()
 {
     email = prompt('Introduce el email que usaste para registrarte:');
-    req_new_password = new XMLHttpRequest();
+    
+    if(window.XMLHttpRequest)
+        req_new_password = new XMLHttpRequest();
+    else
+        req_new_password = new ActiveXObject("Microsoft.XMLHTTP");
+    
     if(req_new_password)
     {
         req_new_password.onreadystatechange = process_new_password;

@@ -7,7 +7,7 @@
 {% endif %}
 
 <div class="answers">
-{% for a in question.answers %}
+{% for a in answers %}
 <div class="{{ loop.cycle('answer_box', 'answer_box2') }}">
     <table class="grade">
     <tr>
@@ -23,7 +23,12 @@
     </tr>
     {% endif %}
     </table>
+    {% if a.id == answer.id %}
+    <div class="answer_s">
+    {% else %}
     <div class="answer">
+    {% endif %}
+        <a name="{{ a.num }}">@{{ a.num }} </a>
         <span class="nick_c" onclick="jump2url('{{ a.user.get_link() }}')">{{ a.user.nick }}</span>
         <span class="date">{{ a.created|timesince }}</span>
         <div class="long_text">{{ a.text|safe|urlize|linebreaks }}</div>

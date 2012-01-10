@@ -1,16 +1,23 @@
+var req_reward;
 var req_question;
-var v_reload = setTimeout("load_answers()", 500);
+var req_vote_answer;
+var v_reload;
+var answer_order = 'grade';
 
 function add_reward(idq)
 {
-    req_question = new XMLHttpRequest();
-    if(req_question)
+    if(window.XMLHttpRequest)
+        req_reward = new XMLHttpRequest();
+    else
+        req_reward = new ActiveXObject("Microsoft.XMLHTTP");
+    
+    if(req_reward)
     {
-        req_question.onreadystatechange = process_reward;
-        req_question.open("POST", "/question_reward", true);
+        req_reward.onreadystatechange = process_reward;
+        req_reward.open("POST", "/question_reward", true);
         var formData = new FormData();
         formData.append("idq", idq);
-        req_question.send(formData);
+        req_reward.send(formData);
     }
     else
     {
@@ -20,9 +27,9 @@ function add_reward(idq)
 
 function process_reward()
 {
-    if(req_question.readyState == 4)
+    if(req_reward.readyState == 4)
     {
-        var messg = req_question.responseText;
+        var messg = req_reward.responseText;
         if(messg.substring(0, 2) == 'OK')
         {
             messg2 = messg.split(';');
@@ -50,13 +57,18 @@ function load_answers()
     var question_id = document.f_answer.idq.value;
     if(question_id)
     {
-        req_question = new XMLHttpRequest();
+        if(window.XMLHttpRequest)
+            req_question = new XMLHttpRequest();
+        else
+            req_question = new ActiveXObject("Microsoft.XMLHTTP");
+        
         if(req_question)
         {
             req_question.onreadystatechange = process_answers;
             req_question.open("POST", "/answers", true);
             var formData = new FormData();
             formData.append("idq", question_id);
+            formData.append("order", answer_order);
             req_question.send(formData);
             clearTimeout(v_reload);
             v_reload = setTimeout("load_answers()", 300000);
@@ -70,6 +82,12 @@ function load_answers()
     {
         alert("idq no encontrado!");
     }
+}
+
+function set_answer_order(order)
+{
+    answer_order = order;
+    load_answers();
 }
 
 function process_answers()
@@ -87,7 +105,11 @@ function process_answers()
 
 function send_answer(idq)
 {
-    req_question = new XMLHttpRequest();
+    if(window.XMLHttpRequest)
+        req_question = new XMLHttpRequest();
+    else
+        req_question = new ActiveXObject("Microsoft.XMLHTTP");
+    
     if(req_question)
     {
         req_question.onreadystatechange = process_answers;
@@ -106,15 +128,19 @@ function send_answer(idq)
 
 function mark_solution(ida)
 {
-    req_question = new XMLHttpRequest();
-    if(req_question)
+    if(window.XMLHttpRequest)
+        req_vote_answer = new XMLHttpRequest();
+    else
+        req_vote_answer = new ActiveXObject("Microsoft.XMLHTTP");
+    
+    if(req_vote_answer)
     {
-        req_question.onreadystatechange = process_answer_solution;
-        req_question.open("POST", "/vote_answers", true);
+        req_vote_answer.onreadystatechange = process_answer_solution;
+        req_vote_answer.open("POST", "/vote_answers", true);
         var formData = new FormData();
         formData.append("ida", ida);
         formData.append("option", "solution");
-        req_question.send(formData);
+        req_vote_answer.send(formData);
     }
     else
     {
@@ -124,18 +150,22 @@ function mark_solution(ida)
 
 function vote_answer(ida, positive)
 {
-    req_question = new XMLHttpRequest();
-    if(req_question)
+    if(window.XMLHttpRequest)
+        req_vote_answer = new XMLHttpRequest();
+    else
+        req_vote_answer = new ActiveXObject("Microsoft.XMLHTTP");
+    
+    if(req_vote_answer)
     {
-        req_question.onreadystatechange = process_answer_vote;
-        req_question.open("POST", "/vote_answers", true);
+        req_vote_answer.onreadystatechange = process_answer_vote;
+        req_vote_answer.open("POST", "/vote_answers", true);
         var formData = new FormData();
         formData.append("ida", ida);
         if(positive)
             formData.append("option", "positive");
         else
             formData.append("option", "negative");
-        req_question.send(formData);
+        req_vote_answer.send(formData);
     }
     else
     {
@@ -145,9 +175,9 @@ function vote_answer(ida, positive)
 
 function process_answer_vote()
 {
-    if(req_question.readyState == 4)
+    if(req_vote_answer.readyState == 4)
     {
-        var messg = req_question.responseText;
+        var messg = req_vote_answer.responseText;
         if(messg.substring(0, 2) == 'OK')
         {
             messg2 = messg.split(';');
@@ -172,9 +202,9 @@ function process_answer_vote()
 
 function process_answer_solution()
 {
-    if(req_question.readyState == 4)
+    if(req_vote_answer.readyState == 4)
     {
-        var messg = req_question.responseText;
+        var messg = req_vote_answer.responseText;
         if(messg.substring(0, 2) == 'OK')
         {
             window.location.reload();

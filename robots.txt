@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Disallow: /img/
+Sitemap: http://www.kelinux.net/sitemap

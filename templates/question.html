@@ -2,36 +2,48 @@
 
 <script type="text/javascript" src="/static/question.js"></script>
 
-<div class="rounded" id="question_info">
-    <h2>{{ question.get_status() }}</h2>
-    <div class="reward2">
-        <span id="question_reward">{{ question.reward }}</span>
-        <br/>
-        <a href="#" onclick="add_reward('{{ question.id }}')" title="añadir un punto a la recompensa">+1 punto</a>
+<table width="100%">
+<tr>
+    <td valign="top">
+    <div class="rounded" id="question_info">
+        <h2>{{ question.get_status() }}</h2>
+        <div class="reward2">
+            <span id="question_reward">{{ question.reward }}</span>
+            <br/>
+            <a href="#" onclick="add_reward('{{ question.id }}')" title="añadir un punto a la recompensa">+1 punto</a>
+        </div>
+        <div>
+            <span class="nick_c" onclick="jump2url('{{ question.user.get_link() }}')">{{ question.user.nick }}</span>
+            {% for c in question.communities %}
+                <span class="community_c" onclick="jump2url('{{ c.get_link() }}')">{{ c.name }}</span>
+            {% endfor %}
+            <span class="date">{{ question.updated|timesince }}</span>
+            <span class="tag">{{ question.num_answers }} respuestas</span>
+        </div>
+        <div class="long_text">{{ question.text|safe|urlize|linebreaks }}</div>
+        <div class="d_right">
+            <form>
+            {% if ke_data.user.is_admin() %}
+                <input type="button" name="remove" value="borrar" onclick="remove_question('{{ question.id }}')"/>
+            {% endif %}
+            {% if ke_data.user.id == question.user.id or ke_data.user.is_admin() %}
+                <input type="button" name="edit" value="editar" onclick="edit_question('{{ question.id }}')"/>
+            {% endif %}
+            </form>
+        </div>
     </div>
-    <div>
-        <span class="nick_c" onclick="jump2url('{{ question.user.get_link() }}')">{{ question.user.nick }}</span>
-        {% for c in question.communities %}
-            <span class="community_c" onclick="jump2url('{{ c.get_link() }}')">{{ c.name }}</span>
-        {% endfor %}
-        <span class="date">{{ question.updated|timesince }}</span>
-        <span class="tag">{{ question.num_answers }} respuestas</span>
-    </div>
-    <div class="long_text">{{ question.text|safe|urlize|linebreaks }}</div>
-    <div class="d_right">
-        <form>
-        {% if ke_data.user.is_admin() %}
-            <input type="button" name="remove" value="borrar" onclick="remove_question('{{ question.id }}')"/>
-        {% endif %}
-        {% if ke_data.user.id == question.user.id or ke_data.user.is_admin() %}
-            <input type="button" name="edit" value="editar" onclick="edit_question('{{ question.id }}')"/>
-        {% endif %}
-        </form>
-    </div>
-</div>
+    </td>
+    <td valign="top" width="255px"><div>{{ ke_data.adsenses|safe }}</div></td>
+</tr>
+</table>
 
 <div class="rounded">
-    <h2>Respuestas:</h2>
+    <h2>Respuestas:
+        <span>ordenar por:
+            <a href="#" onclick="set_answer_order('grade')">nota</a> |
+            <a href="#" onclick="set_answer_order('normal')">fecha</a>
+        </span>
+    </h2>
     <div id="question_answers"></div>
     
     <form name="f_answer" onsubmit="send_answer('{{ question.id }}'); return false">

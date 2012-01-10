@@ -16,6 +16,10 @@ def linebreaks(value):
     for bbset in bbdata:
         p = re.compile(bbset[0], re.DOTALL)
         value = p.sub(bbset[1], value)
+    # mentions
+    aux_mentions = re.findall(r'@[0-9]+\b', value)
+    for mention in aux_mentions:
+        value = value.replace(mention, '<a href="#'+mention[1:]+'">'+mention+'</a>')
     return value.replace('\n', '<br />')
 
 def timesince(t):

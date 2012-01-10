@@ -1,9 +1,13 @@
 var req_chat;
-var v_reload = setTimeout("load_chat_log()", 500);
+var v_reload;
 
 function load_chat_log()
 {
-    req_chat = new XMLHttpRequest();
+    if(window.XMLHttpRequest)
+        req_chat = new XMLHttpRequest();
+    else
+        req_chat = new ActiveXObject("Microsoft.XMLHTTP");
+    
     if(req_chat)
     {
         req_chat.onreadystatechange = process_chat_log;
@@ -34,7 +38,11 @@ function process_chat_log()
 
 function send_chat_msg()
 {
-    req_chat = new XMLHttpRequest();
+    if(window.XMLHttpRequest)
+        req_chat = new XMLHttpRequest();
+    else
+        req_chat = new ActiveXObject("Microsoft.XMLHTTP");
+    
     if(req_chat)
     {
         req_chat.onreadystatechange = process_chat_log;

@@ -28,7 +28,7 @@
 </td>
 <td valign="top">
     <div class="rounded2">
-    <h2>Registrar:</h2>
+    <h2>Crear una cuenta:</h2>
     <form action="/log_in" method="POST">
     <input type="hidden" name="option" value="register"/>
     <table>
@@ -54,6 +54,11 @@
 </tr>
 </table>
 {% else %}
+<div class="rounded">
+    <h2>Hola {{ ke_data.user.nick }}!</h2>
+    ¿Deseas ver tu <b>perfil</b>? haz clic <a href="{{ ke_data.user.get_link() }}">aquí</a>.
+</div>
+
 <table width="100%">
 <tr>
 <td valign="top">
@@ -97,31 +102,6 @@
 </td>
 </tr>
 </table>
-
-<div class="rounded">
-    <h2>Eres miembro de:</h2>
-    <div class="d_list">
-    {% for c in ke_data.user.communities %}
-        <div class="element_c" onclick="jump2url('{{ c.get_link() }}')">{{ c.name }} ({{ c.num_users }})</div>
-    {% endfor %}
-    <div class="element_c" onclick="jump2url('/community_list')"><b>añadir</b></div>
-    </div>
-</div>
-
-<div class="rounded">
-    <h2>Tus preguntas:</h2>
-    {% for q in ke_data.user.questions %}
-        <div class="reward">{{ q.reward }}</div>
-        <div class="chat_msg_c" onclick="jump2url('{{ q.get_link() }}')">
-            <span>{{ q.created }}</span>
-            <span class="date">{{ q.updated|timesince }}</span>
-            <span class="tag">{{ q.num_answers }} respuestas</span>
-            <span class="tag">{{ q.get_status() }}</span>
-            <br/>
-            {{ q.get_resume() }}
-        </div>
-    {% endfor %}
-</div>
 {% endif %}
 
 {% include "footer.html" %}

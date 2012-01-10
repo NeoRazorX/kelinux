@@ -52,6 +52,7 @@ class Ke_user(Base):
             return False
     
     def set_nick(self, n):
+        n = n.lower()
         if re.match("^[a-zA-Z0-9_]{4,16}$", n) and n != 'anonymous':
             if n == self.nick:
                 return True
@@ -100,7 +101,9 @@ class Ke_user(Base):
             v = 0
         if v != 0:
             self.points += v
-            if self.points < 0:
+            if self.is_admin() and self.points <= 0:
+                self.points = 1
+            elif self.points < 0:
                 self.points = 0
     
     def get_link(self, full=False):
@@ -278,6 +281,8 @@ class Ke_answer(Base):
     user = relationship('Ke_user', backref=backref('answers'))
     question = relationship('Ke_question', backref=backref('answers'))
     
+    num = 1
+    
     def __init__(self):
         self.text = ''
         self.created = datetime.now()
@@ -319,7 +324,8 @@ class Super_cache:
         'communities_m': 0,
         'questions': 0,
         'questions_m': 0,
-        'searches': 0
+        'searches': 0,
+        'chat_users': 0
     }
     
     def get_user_by_id(self, i):
@@ -435,8 +441,15 @@ class Super_cache:
                     question = Ke_question()
         return question
     
-    def get_all_questions(self):
-        return Ke_session.query(Ke_question).order_by(Ke_question.id.desc()).all()
+    def get_all_questions(self, order='created', num=0):
+        if order == 'updated':
+            return Ke_session.query(Ke_question).order_by(Ke_question.updated.desc())[num:num+50]
+        elif order == 'reward':
+            return Ke_session.query(Ke_question).order_by(Ke_question.reward.desc())[num:num+50]
+        elif order == 'status':
+            return Ke_session.query(Ke_question).order_by(Ke_question.status)[num:num+50]
+        else:
+            return Ke_session.query(Ke_question).order_by(Ke_question.id.desc())[num:num+50]
     
     def increase_reward2question(self, q):
         if q.exists() and not q.is_solved() and random.randint(0, 99) == 0:
@@ -487,7 +500,7 @@ class Super_cache:
                 break
         if not encontrada:
             self.searches.append([query, 1])
-        return Ke_session.query(Ke_question).filter(Ke_question.text.like('%'+query+'%'))
+        return Ke_session.query(Ke_question).filter(Ke_question.text.like('%'+query+'%'))[:20]
     
     def get_searches(self):
         return self.searches
@@ -496,6 +509,7 @@ class Super_cache:
         self.stats['users_m'] = len(self.users)
         self.stats['communities_m'] = len(self.communities)
         self.stats['questions_m'] = len(self.questions)
+        self.stats['chat_users'] = len(self.chat_users)
         return self.stats
     
     def get_full_stats(self):
@@ -541,23 +555,34 @@ class Ke_web:
         'appname': APP_NAME,
         'appdomain': APP_DOMAIN,
         'appadminemail': APP_ADMIN_EMAIL,
+        'analyticsid': GOOGLE_ANALYTICS_ID,
+        'adsenses': GOOGLE_ADSENSE_SQUARE_HTML,
+        'description': APP_NAME,
         'user': current_user
     }
     
     def first_step(self, title):
+        self.ke_data['rpage'] = title
+        self.ke_data['description'] = title
+        self.ke_data['errormsg'] = False
+        self.ke_data['message'] = False
+        self.ke_data['runonload'] = False
         self.fast_log_in()
         self.sc.add_served_pages()
         if title == 'stats':
             self.ke_data['stats'] = self.sc.get_full_stats()
         else:
             self.ke_data['stats'] = self.sc.get_stats()
-        self.ke_data['rpage'] = title
-        self.ke_data['errormsg'] = False
-        self.ke_data['message'] = False
     
     def set_current_user(self, user):
         self.current_user = user
         self.ke_data['user'] = self.current_user
+    
+    def set_page_description(self, desc):
+        self.ke_data['description'] = desc
+    
+    def run_onload(self, f):
+        self.ke_data['runonload'] = f
     
     def get_cookie(self, name):
         try:
@@ -570,6 +595,7 @@ class Ke_web:
         req_cookie = cherrypy.response.cookie
         req_cookie[name] = value
         req_cookie[name]['expires'] = expires
+        req_cookie[name]['path'] = '/'
     
     def do_log_in(self, email='', passwd=''):
         if email == '':
@@ -607,6 +633,7 @@ class Ke_web:
                     user = user2
                     user.logged_on = True
                 else:
+                    self.do_log_out()
                     self.ke_data['errormsg'] = u'cookie no válida, debes volver a iniciar sesión'
             else:
                 self.ke_data['errormsg'] = 'tienes la cookie de un usuario que ya no existe'
@@ -624,11 +651,17 @@ class Ke_web:
         else:
             user = Ke_user()
             if not user.set_email(email):
-                self.ke_data['errormsg'] = u'el email no es válido o ya existe'
+                if self.sc.get_user_by_email(email).exists():
+                    self.ke_data['errormsg'] = 'el email <b>'+email+u'</b> ya está asociado a una cuenta, si ha olvidado la contraseña use el formulario de la izquierda'
+                else:
+                    self.ke_data['errormsg'] = u'el email no es válido'
             elif not user.set_password(passwd):
                 self.ke_data['errormsg'] = u'la contraseña no es válida (debe contener entre 4 y 20 caracteres alfanuméricos)'
             elif not user.set_nick(nick):
-                self.ke_data['errormsg'] = u'el nombre de usuario no es válido (debe contener entre 4 y 16 caracteres alfanuméricos) o ya existe'
+                if self.sc.get_user_by_nick(nick).exists():
+                    self.ke_data['errormsg'] = 'el nick <b>'+nick+u'</b> ya está asignado a un usuario'
+                else:
+                    self.ke_data['errormsg'] = u'el nombre de usuario no es válido (debe contener entre 4 y 16 caracteres alfanuméricos)'
             else:
                 try:
                     user.new_log_key()
@@ -649,7 +682,7 @@ class Ke_web:
         elif nick == '':
             self.ke_data['errormsg'] = 'introduce un nombre de usuario'
         elif not self.current_user.logged_on:
-            self.ke_data['errormsg'] = u'debes iniciar sesión'
+            self.ke_data['errormsg'] = u'debes iniciar sesión o crear una cuenta'
         elif not self.current_user.set_email(email):
             self.ke_data['errormsg'] = u'el email no es válido o ya existe'
         elif not self.current_user.set_nick(nick):
@@ -682,7 +715,7 @@ class Ke_web:
             user = self.sc.get_user_by_email(email)
             if user.exists():
                 kmail = Ke_mail()
-                kmail.send(user.email, u"Solicitud de cambio de contraseña", u"Hola, te enviamos este email porque has solicitado recordar la contraseña del usuario de %s asociado a esta cuenta de email. Si has sido tú, haz clic en este enlace %s, de lo contrario no te preocupes, sin este email nadie puede cambiar tus datos. Bye!" % (APP_DOMAIN, 'http://'+APP_DOMAIN+'/new_password/'+str(user.id)+'/'+user.password))
+                kmail.send(user.email, u"Solicitud de cambio de contraseña", u"Hola %s, te enviamos este email porque tienes problemas para entrar en %s. Haz clic en este enlace %s para iniciar sesión, y posteriormente cambiar la contraseña. Bye!" % (user.nick, APP_DOMAIN, 'http://'+APP_DOMAIN+'/new_password/'+str(user.id)+'/'+user.password))
                 return u"<div class='message'>se ha enviado un email con las instrucciones</div>"
             else:
                 return u"<div class='error'>el email que has proporcionado no está en nuestra base de datos</div>"
@@ -691,22 +724,20 @@ class Ke_web:
     
     def new_user_password(self, idu='', passwd=''):
         errormsg = ''
-        if id != '' and passwd != '':
+        if idu != '' and passwd != '':
             user = self.sc.get_user_by_id(idu)
             if user.exists():
                 if user.password == passwd:
-                    new_passwd = str(random.randint(0, 999999))
-                    user.password = hashlib.sha1( new_passwd ).hexdigest()
                     try:
+                        user.new_log_key()
+                        self.set_current_user(user)
                         Ke_session.add(user)
                         Ke_session.commit()
+                        self.set_cookie('user_id', user.id)
+                        self.set_cookie('log_key', user.log_key)
                     except:
                         Ke_session.rollback()
                         errormsg = 'error al guardar el usuario en la base de datos'
-                    if errormsg == '':
-                        kmail = Ke_mail()
-                        kmail.send(user.email, u"Nueva contraseña", u"Hola, esta es tu nueva contraseña: '%s'. Usala para entrar en %s y cambiala enseguida." % (new_passwd, 'http://www.'+APP_DOMAIN))
-                        errormsg = u'Te hemos enviado otro email con la nueva contraseña'
                 else:
                     errormsg = 'Datos incorrectos'
             else:
@@ -722,7 +753,7 @@ class Ke_web:
         elif d == '':
             self.ke_data['errormsg'] = u'introduce una descripción para la comunidad'
         elif not self.current_user.logged_on:
-            self.ke_data['errormsg'] = u'debes iniciar sesión'
+            self.ke_data['errormsg'] = u'debes iniciar sesión o crear una cuenta'
         elif self.current_user.points < 1:
             self.ke_data['errormsg'] = 'no tienes suficientes puntos'
         else:
@@ -742,7 +773,6 @@ class Ke_web:
                         Ke_session.commit()
                     except:
                         Ke_session.rollback()
-                        self.current_user.add_points(1)
                         self.ke_data['errormsg'] = 'error al guardar la comunidad en la base de datos'
         return community
     
@@ -751,7 +781,7 @@ class Ke_web:
         if text == '':
             self.ke_data['errormsg'] = 'introduce algo de texto!'
         elif not self.current_user.logged_on:
-            self.ke_data['errormsg'] = u'debes iniciar sesión'
+            self.ke_data['errormsg'] = u'debes iniciar sesión o crear una cuenta'
         else:
             if not question.set_text(text):
                 self.ke_data['errormsg'] = u'introduce texto válido'
@@ -780,7 +810,6 @@ class Ke_web:
                             return 'OK;'+str(question.reward)+';'+str(self.current_user.points)
                         except:
                             Ke_session.rollback()
-                            self.current_user.add_points(1)
                             return u'Error al procesar la petición'
                     else:
                         return u'No puedes añadir recompensa a un pregunta solucionada'
@@ -789,56 +818,126 @@ class Ke_web:
             else:
                 return 'No tienes suficientes puntos'
         else:
-            return u'Debes iniciar sesión'
+            return u'Debes iniciar sesión o crear una cuenta'
     
     def get_front_questions(self):
         mixto = []
-        if self.current_user.logged_on:
-            for q in self.current_user.questions[-10:]:
-                if q.updated > (datetime.today() - timedelta(days=7)):
-                    mixto.insert(0, q)
-        choice = random.randint(0, 2)
-        if choice == 0:
-            for q in Ke_session.query(Ke_question).order_by(Ke_question.id.desc())[0:20]:
-                if q not in mixto:
-                    mixto.append(q)
-        elif choice == 1:
+        if random.randint(0, 1) == 0:
             for q in Ke_session.query(Ke_question).order_by(Ke_question.reward.desc())[0:20]:
-                if q not in mixto:
+                i = 0
+                insertado = False
+                while i < len(mixto):
+                    if q.updated > mixto[i].updated:
+                        mixto.insert(i, q)
+                        insertado = True
+                        break
+                    i += 1
+                if not insertado:
                     mixto.append(q)
         else:
-            for q in Ke_session.query(Ke_question).order_by(Ke_question.num_answers)[0:20]:
-                if q not in mixto:
-                    mixto.append(q)
+            for q in Ke_session.query(Ke_question).order_by(Ke_question.updated.desc())[0:20]:
+                mixto.append(q)
+        if self.current_user.logged_on:
+            # insertamos en orden (por fecha)
+            for q in self.current_user.questions[-5:]:
+                if q.updated > (datetime.today() - timedelta(days=7)) and q not in mixto:
+                    i = 0
+                    insertado = False
+                    while i < len(mixto):
+                        if q.updated > mixto[i].updated:
+                            mixto.insert(i, q)
+                            insertado = True
+                            break
+                        i += 1
+                    if not insertado:
+                        mixto.append(q)
         return mixto
+    
+    def get_answers(self, idq, order='grade'):
+        answers = []
+        aux = Ke_session.query(Ke_answer).filter_by(question_id=idq).order_by(Ke_answer.created).all()
+        if aux:
+            # numeramos
+            mgrade = 0
+            i = 0
+            while i < len(aux):
+                aux[i].num = i+1
+                if aux[i].grade > 0:
+                    mgrade = aux[i].grade
+                i += 1
+            # si no hay ninguna respuesta con nota, no hace falta ordenar por nota
+            if mgrade == 0:
+                order = 'normal'
+            if order == 'grade':
+                # ordenamos teniendo en cuenta las meciones.
+                while len(aux) > 0:
+                    # seleccionar
+                    i = len(aux)-1
+                    answer = aux[0]
+                    while i > 0:
+                        if aux[i].grade > answer.grade:
+                            answer = aux[i]
+                        i -= 1
+                    aux.remove(answer)
+                    # dónde la meto?
+                    if len(answers) < 1:
+                        answers.append(answer)
+                    else:
+                        # ha sido mencionada por alguna pregunta previamente seleccionada?
+                        mention = False
+                        position = 0
+                        for a in answers:
+                            if a.text.find('@'+str(answer.num)+' ') != -1:
+                                # si, ha sido mencionada
+                                mention = True
+                                answers.insert(position, answer)
+                                break
+                            position += 1
+                        if not mention:
+                            # menciona alguna respuesta previamente seleccionada?
+                            position = 0
+                            for a in answers:
+                                if answer.text.find('@'+str(a.num)+' ') != -1:
+                                    # si, si que menciona alguna
+                                    mention = True
+                                    answers.insert(position+1, answer)
+                                    break
+                                position += 1
+                        # nada de nada?
+                        if not mention:
+                            answers.append(answer)
+            else: # orden por fecha
+                answers = aux
+        return answers
     
     def new_answer(self, idq='', text=''):
         question = self.sc.get_question_by_id(idq)
+        answer = Ke_answer()
         if question.exists():
             if text != '':
                 if self.current_user.logged_on:
-                    answer = Ke_answer()
                     if answer.set_text(text):
                         answer.user = self.current_user
                         answer.question = question
                         question.num_answers = len( question.answers )
+                        question.updated = datetime.today()
                         if question.status == 0:
                             question.set_status(1)
                         try:
                             Ke_session.add(answer)
                             Ke_session.add(question)
                             Ke_session.commit()
-                            self.ke_data['message'] = 'respuesta guardada correctamente'
+                            self.ke_data['message'] = u'respuesta guardada correctamente <a href="#'+str(len(question.answers))+'">@'+str(len(question.answers))+'</a>'
                         except:
                             Ke_session.rollback()
-                            self.ke_data['errormsg'] = 'error al guardar la respuesta en la base de datos'
+                            self.ke_data['errormsg'] = u'error al guardar la respuesta en la base de datos'
                     else:
                         self.ke_data['errormsg'] = u'introduce texto válido'
                 else:
-                    self.ke_data['errormsg'] = u'debes iniciar sesión'
+                    self.ke_data['errormsg'] = u'debes <a href="/log_in">iniciar sesión</a> o <a href="/log_in">crear una cuenta</a>'
         else:
-            self.ke_data['errormsg'] = 'pregunta no encontrada'
-        return question
+            self.ke_data['errormsg'] = u'pregunta no encontrada'
+        return question,answer
     
     def new_vote2answer(self, ida='', points=1):
         message = ''
@@ -850,9 +949,11 @@ class Ke_web:
                         self.current_user.add_points(-1)
                         if points > 0:
                             answer.grade += 1
+                            answer.user.add_points(1)
                             message = 'OK;'+ida+';'+str(answer.grade)+';'+str(self.current_user.points)
                         elif points < 0:
                             answer.grade -= 1
+                            answer.question.add_reward(1)
                             message = 'OK;'+ida+';'+str(answer.grade)+';'+str(self.current_user.points)
                         else:
                             self.current_user.add_points(1)
@@ -869,7 +970,7 @@ class Ke_web:
                 else:
                     message = u'No tienes suficientes puntos'
             else:
-                message = u'Debes iniciar sesión'
+                message = u'Debes iniciar sesión o crear una cuenta'
         else:
             message = u'respuesta no encontrada'
         return message
@@ -882,8 +983,10 @@ class Ke_web:
                 if self.current_user == answer.user or self.current_user.is_admin():
                     if not answer.question.is_solved():
                         answer.grade += answer.question.reward
+                        answer.user.add_points( answer.question.reward )
                         answer.question.reward = 0
                         answer.question.set_status(11)
+                        answer.question.updated = datetime.today()
                         self.current_user.add_points(5)
                         try:
                             Ke_session.add(answer)
@@ -898,7 +1001,7 @@ class Ke_web:
                 else:
                     message = u'Tu no puedes hacer esto, chaval!'
             else:
-                message = u'Debes iniciar sesión'
+                message = u'Debes iniciar sesión o crear una cuenta'
         else:
             message = u'respuesta no encontrada'
         return message

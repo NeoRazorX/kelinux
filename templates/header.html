@@ -4,12 +4,28 @@
     <title>{{ ke_data.appname }}</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta name="keywords" content="{{ ke_data.appname }}" />
-    <meta name="description" content="{{ ke_data.appname }}" />
+    <meta name="description" content="{{ ke_data.description }}" />
     <meta name="Robots" content="all" />
     <link rel="stylesheet" href="/static/base.css" type="text/css" />
     <script type="text/javascript" src="/static/base.js"></script>
+    <script type="text/javascript">
+        var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', '{{ ke_data.analyticsid }}']);
+            _gaq.push(['_trackPageview']);
+        (function() {
+            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+        })();
+    </script>
 </head>
+
+{% if ke_data.runonload %}
+<body onLoad="{{ ke_data.runonload }}">
+{% else %}
 <body>
+{% endif %}
+
 <table id="header_menu">
     <tr>
         <td id="logo"><a href="/">{{ ke_data.appdomain }}</a></td>
@@ -48,7 +64,7 @@
         <li {{ "stats"|highlight_page(ke_data.rpage) }} onclick="jump2url('/stats')">estadísticas</li>
     </ul>
     <ul>
-        <li {{ "chat_room"|highlight_page(ke_data.rpage) }} onclick="jump2url('/chat_room')">chat</li>
+        <li {{ "chat_room"|highlight_page(ke_data.rpage) }} onclick="jump2url('/chat_room')">chat <span>{{ ke_data.stats.chat_users }}</span></li>
     </ul>
 </div>
 
@@ -80,7 +96,7 @@
     </form>
     </table>
     {% else %}
-        <div class="error">Debes estar <a href="/log_in">registrado</a> para esto.</div>
+        <div class="error">Debes estar <a href="/log_in">iniciar sesión</a> o <a href="/log_in">crear una cuenta</a></div>
     {% endif %}
     </div>
     <div class="d_hidden" id="d_create_question">
@@ -90,7 +106,7 @@
             <div class="d_right">Cuesta 0 puntos &nbsp; <input type="submit" value="crear"/></div>
         </form>
     {% else %}
-        <div class="error">Debes estar <a href="/log_in">registrado</a> para esto.</div>
+        <div class="error">Debes estar <a href="/log_in">iniciar sesión</a> o <a href="/log_in">crear una cuenta</a></div>
     {% endif %}
     </div>
 </div>
