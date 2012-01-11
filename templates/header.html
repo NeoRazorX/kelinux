@@ -30,8 +30,8 @@
     <tr>
         <td id="logo"><a href="/">{{ ke_data.appdomain }}</a></td>
         <td id="finder">
-            <form name="f_finder" onsubmit="find_question(); return false">
-                <input type="text" name="query" size="30" maxlength="99"/>
+            <form name="f_finder" action="/finder" method="POST">
+                <input type="text" name="query" size="30" maxlength="99" value="{{ ke_data.query }}"/>
                 <input id="b_find" type="submit" value="buscar"/>
             </form>
         </td>
@@ -39,7 +39,7 @@
             {% if ke_data.user.logged_on %}
                 <span id="current_user_points">Tienes <b>{{ ke_data.user.points }}</b> puntos</span>
             {% else %}
-                <span>Uptime: {{ ke_data.stats.uptime|timesince }}</span>
+                <span>Uptime: {{ ke_data.stats.uptime|timesince(False) }}</span>
                 <span>Páginas servidas: {{ ke_data.stats.served_pages }}</span>
             {% endif %}
         </td>
@@ -112,7 +112,6 @@
 </div>
 
 <div id="main_div"/>
-<div id="finder_ressults"></div>
 
 {% if ke_data.errormsg %}
 <div class="error">{{ ke_data.errormsg }}</div>

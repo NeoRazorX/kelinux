@@ -1,7 +1,7 @@
 {% include "header.html" %}
 
 <div class="rounded">
-    <h2>Lista de comunidades</h2>
+    <h2>Lista de comunidades:</h2>
     <div class="d_list">
     {% for c in community_list %}
         <div class="element_c" onclick="jump2url('{{ c.get_link() }}')">{{ c.name }} ({{ c.num_users }})</div>

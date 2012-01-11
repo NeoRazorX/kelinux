@@ -22,7 +22,7 @@ def linebreaks(value):
         value = value.replace(mention, '<a href="#'+mention[1:]+'">'+mention+'</a>')
     return value.replace('\n', '<br />')
 
-def timesince(t):
+def timesince(t, since=True):
     time_str = 'ahora mismo'
     now = datetime.now()
     diff = now - t
@@ -39,7 +39,10 @@ def timesince(t):
         if period:
             time_str = "%d %s" % (period, singular if period == 1 else plural)
             break
-    return time_str
+    if since:
+        return 'hace ' + time_str
+    else:
+        return time_str
 
 def highlight_page(name, selection=''):
     if name == selection:

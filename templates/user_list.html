@@ -1,7 +1,7 @@
 {% include "header.html" %}
 
 <div class="rounded">
-    <h2>Lista de usuarios</h2>
+    <h2>Lista de usuarios:</h2>
     <div class="d_list">
     {% for u in user_list %}
         <div class="element_c" onclick="jump2url('{{ u.get_link() }}')">{{ u.nick }} ({{ u.points }})</div>

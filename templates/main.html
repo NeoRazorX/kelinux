@@ -41,7 +41,12 @@
 {% endif %}
 
 <div class="rounded">
-    <h2>Una lista de preguntas para ti:</h2>
+    <h2>
+        Una lista de preguntas para ti:
+        {% if ke_data.user.logged_on %}
+            <span><a href="{{ ke_data.user.get_link() }}">ver todas mis preguntas</a></span>
+        {% endif %}
+    </h2>
     {% for q in question_list %}
         <div class="reward">{{ q.reward }}</div>
         <div class="chat_msg_c" onclick="jump2url('{{ q.get_link() }}')">

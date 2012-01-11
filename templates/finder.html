@@ -1,5 +1,8 @@
+{% include "header.html" %}
+
+<div id="finder_ressults">
 <div class="rounded">
-<h2>resultados de la búsqueda "{{ query }}": <a class="b_close" href="#" onclick="close_finder_ressults();">X</a></h2>
+<h2>resultados de la búsqueda "{{ ke_data.query }}":</h2>
 {% for q in questions %}
     <div class="reward">{{ q.reward }}</div>
     <div class="chat_msg_c" onclick="jump2url('{{ q.get_link() }}')">
@@ -12,3 +15,7 @@
     </div>
 {% endfor %}
 </div>
+<div class="message">¿No encuentras lo que buscas? Usa el botón <b>crear</b> y escribe tus dudas y/o preguntas!</div>
+</div>
+
+{% include "footer.html" %}

@@ -32,6 +32,8 @@ cp_config = {
     'global': {
         'server.socket_host': '0.0.0.0',
         'server.socket_port': APP_PORT,
+        'server.thread_pool': APP_THREAD_POOL,
+        'server.socket_queue_size': APP_SOCKET_QUEUE_SIZE,
         'log.access_file': Ke_current_path+'/logs/kelinux_access.'+str(datetime.today().isoformat(' '))+'.log',
         'log.error_file': Ke_current_path+'/logs/kelinux_error.'+str(datetime.today().isoformat(' '))+'.log',
         'tools.encode.on': True,
@@ -58,7 +60,7 @@ cp_config = {
 
 class Main_web(Ke_web):
     @cherrypy.expose
-    def index(self):
+    def index(self, **params):
         self.first_step('index')
         tmpl = env.get_template('main.html')
         return tmpl.render(question_list=self.get_front_questions(),
@@ -66,13 +68,13 @@ class Main_web(Ke_web):
                            ke_data=self.ke_data)
     
     @cherrypy.expose
-    def default(self, attr=''):
+    def default(self, attr='', **params):
         self.first_step('error')
         tmpl = env.get_template('error.html')
         return tmpl.render(ke_data=self.ke_data)
     
     @cherrypy.expose
-    def log_in(self, option='', email='', nick='', passwd='', passwd2='', npasswd='', npasswd2=''):
+    def log_in(self, option='', email='', nick='', passwd='', passwd2='', npasswd='', npasswd2='', **params):
         self.first_step('log_in')
         if cherrypy.request.method == 'POST':
             if option == 'log_in':
@@ -87,7 +89,7 @@ class Main_web(Ke_web):
         return tmpl.render(ke_data=self.ke_data)
     
     @cherrypy.expose
-    def new_password(self, email='', passwd=''):
+    def new_password(self, email='', passwd='', **params):
         self.first_step('new_password')
         errormsg = ''
         if cherrypy.request.method == 'POST':
@@ -100,15 +102,15 @@ class Main_web(Ke_web):
             return errormsg
     
     @cherrypy.expose
-    def finder(self, query=''):
-        self.first_step('create_msg')
-        cherrypy.response.headers['Content-Type'] = 'text/plain'
-        tmpl = env.get_template('finder_log.html')
+    def finder(self, query='', **params):
+        self.first_step('finder')
+        self.ke_data['query'] = query
+        tmpl = env.get_template('finder.html')
         return tmpl.render(questions=self.sc.new_search(query),
-                           query=query)
+                           ke_data=self.ke_data)
     
     @cherrypy.expose
-    def create(self, option='', name='', description='', text=''):
+    def create(self, option='', name='', description='', text='', **params):
         self.first_step('create_msg')
         cherrypy.response.headers['Content-Type'] = 'text/plain'
         tmpl = env.get_template('create_msg.html')
@@ -124,14 +126,14 @@ class Main_web(Ke_web):
             raise cherrypy.HTTPRedirect('/log_in')
     
     @cherrypy.expose
-    def community_list(self):
+    def community_list(self, **params):
         self.first_step('community_list')
         tmpl = env.get_template('community_list.html')
         return tmpl.render(community_list=self.sc.get_all_communities(),
                            ke_data=self.ke_data)
     
     @cherrypy.expose
-    def community(self, name='', order='updated', num=0):
+    def community(self, name='', order='updated', num=0, **params):
         self.first_step('community')
         community = self.sc.get_community_by_name(name)
         if community.exists():
@@ -161,7 +163,43 @@ class Main_web(Ke_web):
             raise cherrypy.HTTPRedirect('/community_list')
     
     @cherrypy.expose
-    def join_community(self, name=''):
+    def edit_community(self, idc='', name='', description='', **params):
+        self.first_step('edit community')
+        community = self.sc.get_community_by_id(idc)
+        if community.exists():
+            if self.current_user.is_admin():
+                if params.get('remove', '') == str(community.id):
+                    Ke_session.delete(community)
+                    self.sc.remove_community(community.id)
+                    try:
+                        Ke_session.commit()
+                    except:
+                        Ke_session.rollback()
+                        self.ke_data['errormsg'] = u'error al borrar la comunidad de la base de datos'
+                    if not self.ke_data['errormsg']:
+                        raise cherrypy.HTTPRedirect('/community_list')
+                elif name != '' and description != '':
+                    if not community.set_name(name):
+                        Ke_session.rollback()
+                        self.ke_data['errormsg'] = u'el nombre no es válido'
+                    elif not community.set_description(description):
+                        Ke_session.rollback()
+                        self.ke_data['errormsg'] = u'la descripción no es válida'
+                    else:
+                        try:
+                            Ke_session.commit()
+                            self.ke_data['message'] = u'comunidad modificada correctamente'
+                        except:
+                            Ke_session.rollback()
+                            self.ke_data['errormsg'] = u'error al guardar las modificaciones en la base de datos'
+            self.set_page_description( community.description )
+            tmpl = env.get_template('edit_community.html')
+            return tmpl.render(community=community, ke_data=self.ke_data)
+        else:
+            raise cherrypy.HTTPRedirect('/community_list')
+    
+    @cherrypy.expose
+    def join_community(self, name='', **params):
         self.first_step('community')
         if self.current_user.logged_on:
             community = self.sc.get_community_by_name(name)
@@ -172,7 +210,6 @@ class Main_web(Ke_web):
                     community.users.append(self.current_user)
                 community.num_users = len( community.users )
                 try:
-                    Ke_session.add(community)
                     Ke_session.commit()
                 except:
                     Ke_session.rollback()
@@ -183,7 +220,7 @@ class Main_web(Ke_web):
             raise cherrypy.HTTPRedirect('/log_in')
     
     @cherrypy.expose
-    def question_list(self, order='created', num=0):
+    def question_list(self, order='created', num=0, **params):
         self.first_step('question_list')
         try:
             num = int(num)
@@ -199,7 +236,7 @@ class Main_web(Ke_web):
                            ke_data=self.ke_data)
     
     @cherrypy.expose
-    def question(self, idq=''):
+    def question(self, idq='', **params):
         self.first_step('question')
         self.run_onload('load_answers()')
         question = self.sc.get_question_by_id(idq)
@@ -211,13 +248,61 @@ class Main_web(Ke_web):
             raise cherrypy.HTTPRedirect('/question_list')
     
     @cherrypy.expose
-    def question_reward(self, idq=''):
+    def edit_question(self, idq='', **params):
+        self.first_step('edit question')
+        question = self.sc.get_question_by_id(idq)
+        if question.exists():
+            communities = []
+            for c in question.communities:
+                communities.append(c)
+            for c in question.user.communities:
+                if c not in communities:
+                    communities.append(c)
+            if self.current_user.id == question.user.id or self.current_user.is_admin():
+                if params.get('remove', '') == str(question.id): # ¿Borramos la pregunta?
+                    Ke_session.delete(question)
+                    self.sc.remove_question( question.id )
+                    try:
+                        Ke_session.commit()
+                    except:
+                        Ke_session.rollback()
+                        self.ke_data['errormsg'] = u'error al borrar la pregunta de la base de datos'
+                    if not self.ke_data['errormsg']:
+                        raise cherrypy.HTTPRedirect('/question_list')
+                elif params.get('text', '') != '': # ¿Modificamos la pregunta?
+                    if not question.set_text( params.get('text', '') ):
+                        Ke_session.rollback()
+                        self.ke_data['errormsg'] = u'El texto no es válido'
+                    elif not question.set_status( params.get('status', 0) ):
+                        Ke_session.rollback()
+                        self.ke_data['errormsg'] = u'Estado no válido'
+                    else:
+                        del question.communities[:]
+                        for c in communities:
+                            if str(c.id) in params.get('communities', []):
+                                question.communities.append(c)
+                        try:
+                            Ke_session.commit()
+                            self.ke_data['message'] = u'pregunta modificada correctamente'
+                        except:
+                            Ke_session.rollback()
+                            self.ke_data['errormsg'] = u'error al guardar las modificaciones en la base de datos'
+            self.set_page_description( question.get_resume() )
+            tmpl = env.get_template('edit_question.html')
+            return tmpl.render(question=question,
+                               communities=communities,
+                               ke_data=self.ke_data)
+        else:
+            raise cherrypy.HTTPRedirect('/question_list')
+    
+    @cherrypy.expose
+    def question_reward(self, idq='', **params):
         self.first_step('question')
         cherrypy.response.headers['Content-Type'] = 'text/plain'
         return self.add_reward2question(idq)
     
     @cherrypy.expose
-    def answers(self, idq='', order='grade', text=''):
+    def answers(self, idq='', order='grade', text='', **params):
         self.first_step('question')
         question,answer = self.new_answer(idq, text)
         answers = self.get_answers(idq, order)
@@ -225,7 +310,7 @@ class Main_web(Ke_web):
         return tmpl.render(question=question, answer=answer, answers=answers, ke_data=self.ke_data)
     
     @cherrypy.expose
-    def vote_answers(self, option='', ida=''):
+    def vote_answers(self, option='', ida='', **params):
         self.first_step('question')
         if option == 'positive':
             return self.new_vote2answer(ida, 1)
@@ -237,14 +322,14 @@ class Main_web(Ke_web):
             return u'opción desconocida'
     
     @cherrypy.expose
-    def user_list(self):
+    def user_list(self, **params):
         self.first_step('user_list')
         tmpl = env.get_template('user_list.html')
         return tmpl.render(user_list=self.sc.get_all_users(),
                            ke_data=self.ke_data)
     
     @cherrypy.expose
-    def user(self, idu='', order='updated', num=0):
+    def user(self, idu='', order='updated', num=0, **params):
         self.first_step('user')
         user = self.sc.get_user_by_id(idu)
         if user.exists():
@@ -273,14 +358,14 @@ class Main_web(Ke_web):
             raise cherrypy.HTTPRedirect('/user_list')
     
     @cherrypy.expose
-    def stats(self):
+    def stats(self, **params):
         self.first_step('stats')
         tmpl = env.get_template('stats.html')
         return tmpl.render(searches=self.sc.get_searches(),
                            ke_data=self.ke_data)
     
     @cherrypy.expose
-    def chat_room(self, text=''):
+    def chat_room(self, text='', **params):
         self.first_step('chat_room')
         self.run_onload('load_chat_log()')
         if cherrypy.request.method == 'POST':
@@ -296,7 +381,7 @@ class Main_web(Ke_web):
             return tmpl.render(ke_data=self.ke_data)
     
     @cherrypy.expose
-    def sitemap(self):
+    def sitemap(self, **params):
         self.first_step('sitemap')
         questions = self.get_front_questions()
         document = "Content-Type: text/xml\n\n"

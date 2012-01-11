@@ -6,7 +6,10 @@
 <tr>
     <td valign="top">
     <div class="rounded" id="question_info">
-        <h2>{{ question.get_status() }}</h2>
+        <h2>
+            {{ question.get_status() }}
+            <span>{{ question.updated|timesince }}</span>
+        </h2>
         <div class="reward2">
             <span id="question_reward">{{ question.reward }}</span>
             <br/>
@@ -17,19 +20,12 @@
             {% for c in question.communities %}
                 <span class="community_c" onclick="jump2url('{{ c.get_link() }}')">{{ c.name }}</span>
             {% endfor %}
-            <span class="date">{{ question.updated|timesince }}</span>
-            <span class="tag">{{ question.num_answers }} respuestas</span>
         </div>
         <div class="long_text">{{ question.text|safe|urlize|linebreaks }}</div>
         <div class="d_right">
-            <form>
-            {% if ke_data.user.is_admin() %}
-                <input type="button" name="remove" value="borrar" onclick="remove_question('{{ question.id }}')"/>
-            {% endif %}
-            {% if ke_data.user.id == question.user.id or ke_data.user.is_admin() %}
-                <input type="button" name="edit" value="editar" onclick="edit_question('{{ question.id }}')"/>
-            {% endif %}
-            </form>
+        {% if ke_data.user.id == question.user.id or ke_data.user.is_admin() %}
+            <form><input type="button" name="edit" value="editar" onclick="edit_question('{{ question.id }}')"/></form>
+        {% endif %}
         </div>
     </div>
     </td>
@@ -38,7 +34,7 @@
 </table>
 
 <div class="rounded">
-    <h2>Respuestas:
+    <h2>Respuestas: {{ question.num_answers }}
         <span>ordenar por:
             <a href="#" onclick="set_answer_order('grade')">nota</a> |
             <a href="#" onclick="set_answer_order('normal')">fecha</a>

@@ -1,0 +1,56 @@
+{% include "header.html" %}
+
+<script type="text/javascript" src="/static/question.js"></script>
+
+<div class="rounded">
+    <h2>
+        Editar pregunta: <a href="{{ question.get_link() }}">{{ question.id }}</a>
+        <span>{{ question.updated|timesince }}</span>
+    </h2>
+    <form name="f_edit_question" method="POST">
+        <textarea rows="15" name="text">{{ question.text }}</textarea>
+        <div>
+            <b>Comunidades:</b>
+            {% for c in communities%}
+                {% if c in question.communities %}
+                <input type="checkbox" name="communities" value="{{ c.id }}" checked/>{{ c.name }}
+                {% else %}
+                <input type="checkbox" name="communities" value="{{ c.id }}"/>{{ c.name }}
+                {% endif %}
+            {% endfor %}
+            &nbsp; | &nbsp; <b>Estado:</b>
+            <select name="status">
+            {% for s in range(30) %}
+                {% if question.get_status(s) != 'estado desconocido' %}
+                    {% if question.status == s %}
+                        <option value="{{ s }}" selected>{{ question.get_status(s) }}</option>
+                    {% else %}
+                        <option value="{{ s }}">{{ question.get_status(s) }}</option>
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+            </select>
+        </div>
+        <br/>
+        <table width="100%">
+        <tr>
+            {% if ke_data.user.is_admin() %}
+                <td>
+                    <input type="hidden" name="remove"/>
+                    <input type="button" value="borrar" onclick="remove_question('{{ question.id }}')"/>
+                </td>
+            {% endif %}
+            <td align="center">
+                Autor: <a href="{{ question.user.get_link() }}">{{ question.user.nick }}</a> |
+                Creada: {{ question.created }} |
+                Recompensa: {{ question.reward }} puntos.
+            </td>
+            {% if ke_data.user.id == question.user.id or ke_data.user.is_admin() %}
+                <td align="right"><input type="submit" value="guardar"/></td>
+            {% endif %}
+        </tr>
+        </table>
+    </form>
+</div>
+
+{% include "footer.html" %}

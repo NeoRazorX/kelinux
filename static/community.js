@@ -1,9 +1,13 @@
-function remove_community(idc)
-{
-    alert('Borrar la comunidad: '+idc);
-}
-
 function edit_community(idc)
 {
-    alert('Editar la comunidad: '+idc);
+    jump2url('/edit_community/'+idc);
+}
+
+function remove_community(idc)
+{
+    if( confirm('Estas completamente seguro de querer eliminar esta comunidad?') )
+    {
+        document.f_edit_community.remove.value = idc;
+        document.f_edit_community.submit();
+    }
 }

@@ -3,7 +3,7 @@
 <div class="rounded">
 <h2>Estadísticas</h2>
 <div class="d_list">
-    <div class="element">Uptime: {{ ke_data.stats.uptime|timesince }}</div>
+    <div class="element">Uptime: {{ ke_data.stats.uptime|timesince(False) }}</div>
     <div class="element">Páginas servidas: {{ ke_data.stats.served_pages }}</div>
     <div class="element">Usuarios: {{ ke_data.stats.users }}</div>
     <div class="element">Comunidades: {{ ke_data.stats.communities }}</div>

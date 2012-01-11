@@ -216,12 +216,16 @@ function process_answer_solution()
     }
 }
 
-function remove_question(idq)
-{
-    alert('Borrar la pregunta: '+idq);
-}
-
 function edit_question(idq)
 {
-    alert('Editar la pregunta: '+idq);
+    jump2url('/edit_question/'+idq);
+}
+
+function remove_question(idq)
+{
+    if( confirm('Estas completamente seguro de querer eliminar esta pregunta?') )
+    {
+        document.f_edit_question.remove.value = idq;
+        document.f_edit_question.submit();
+    }
 }

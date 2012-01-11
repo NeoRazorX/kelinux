@@ -1,9 +1,11 @@
 {% include "header.html" %}
 
 <div class="rounded">
-    <h2>{{ user.nick }}</h2>
-    Usuario desde: {{ user.created }},
-    tiene {{ user.points }} puntos.
+    <h2>
+        {{ user.nick }}
+        <span>{{ user.points }} puntos</span>
+    </h2>
+    <div>Usuario desde: {{ user.created }}.</div>
 </div>
 
 <div class="rounded">

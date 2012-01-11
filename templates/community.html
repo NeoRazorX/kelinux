@@ -3,12 +3,11 @@
 <script type="text/javascript" src="/static/community.js"></script>
 
 <div class="rounded">
-    <h2>{{ community.name }}</h2>
-    <div class="chat_msg">
-        {{ community.description|safe|urlize }}
-        <span class="date">{{ community.created|timesince }}</span>
-        <span class="tag">Usuarios: {{ community.num_users }}</span>
-    </div>
+    <h2>
+        {{ community.name }}
+        <span>{{ community.created }}</span>
+    </h2>
+    <div class="long_text">{{ community.description|safe|urlize }}</div>
     <form action="/join_community">
     <input type="hidden" name="name" value="{{ community.name }}"/>
     <table width="100%">
@@ -19,11 +18,11 @@
         {% else %}
             <input type="submit" value="unirme"/> No formas parte de esta comunidad
         {% endif %}
+            | hay <b>{{ community.num_users }}</b> miembros.
         </td>
         <td align="right">
         {% if ke_data.user.is_admin() %}
-            <input type="button" name="remove" value="borrar" onclick="remove_community('{{ community.id }}')"/>
-            <input type="button" name="edit" value="editar" onclick="edit_community('{{ community.id }}')"/>
+            <input type="button" value="editar" onclick="edit_community('{{ community.id }}')"/>
         {% endif %}
         </td>
     </tr>

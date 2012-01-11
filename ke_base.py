@@ -94,13 +94,13 @@ class Ke_user(Base):
         self.last_log_in = datetime.now()
         self.logged_on = True
     
-    def add_points(self, p):
+    def add_points(self, p=0):
         try:
-            v = int(p)
+            p = int(p)
         except:
-            v = 0
-        if v != 0:
-            self.points += v
+            p = 0
+        if p != 0:
+            self.points += p
             if self.is_admin() and self.points <= 0:
                 self.points = 1
             elif self.points < 0:
@@ -146,6 +146,7 @@ class Ke_community(Base):
             return False
     
     def set_name(self, n):
+        n = n.lower()
         if re.match("^[a-zA-Z0-9_]{3,20}$", n):
             self.name = n
             return True
@@ -212,9 +213,16 @@ class Ke_question(Base):
             return False
     
     def get_resume(self):
-        return self.text[:200]
+        if len(self.text) > 200:
+            return self.text[:200]+'...'
+        else:
+            return self.text
     
-    def set_status(self, s):
+    def set_status(self, s=-1):
+        try:
+            s = int(s)
+        except:
+            s = -1
         if self.get_status(s) != 'estado desconocido':
             self.status = s
             return True
@@ -253,11 +261,11 @@ class Ke_question(Base):
     
     def add_reward(self, p):
         try:
-            v = int(p)
+            p = int(p)
         except:
-            v = 0
-        if v > 0:
-            self.reward += v
+            p = 0
+        if p > 0:
+            self.reward += p
     
     def get_link(self, full=False):
         if full:
@@ -330,21 +338,21 @@ class Super_cache:
     
     def get_user_by_id(self, i):
         try:
-            i2 = int(i)
+            i = int(i)
         except:
-            i2 = -1
-        if i2 <= 0:
+            i = -1
+        if i <= 0:
             user = Ke_user()
         else:
             encontrado = False
             for u in self.users:
-                if u.id == i2:
+                if u.id == i:
                     self.give_points2user(u)
                     user = u
                     encontrado = True
                     break
             if not encontrado:
-                user = Ke_session.query(Ke_user).filter_by(id=i2).first()
+                user = Ke_session.query(Ke_user).filter_by(id=i).first()
                 try:
                     if user.exists():
                         self.users.append(user)
@@ -393,10 +401,29 @@ class Super_cache:
         if u.exists() and u.logged_on and random.randint(0, 99) == 0:
             u.add_points(+1)
             try:
-                Ke_session.add(u)
                 Ke_session.commit()
             except:
                 Ke_session.rollback()
+    
+    def get_community_by_id(self, idc):
+        try:
+            idc = int(idc)
+        except:
+            idc = -1
+        encontrado = False
+        for c in self.communities:
+            if c.id == idc:
+                community = c
+                encontrado = True
+                break
+        if not encontrado:
+            community = Ke_session.query(Ke_community).filter_by(id=idc).first()
+            try:
+                if community.exists():
+                    self.communities.append(community)
+            except:
+                community = Ke_community()
+        return community
     
     def get_community_by_name(self, n):
         encontrado = False
@@ -417,23 +444,34 @@ class Super_cache:
     def get_all_communities(self):
         return Ke_session.query(Ke_community).order_by(Ke_community.name).all()
     
+    def remove_community(self, idc):
+        removed = False
+        i = 0
+        while i < len(self.communities):
+            if self.communities[i].id == idc:
+                del self.communities[i]
+                removed = True
+                break
+            i += 1
+        return removed
+    
     def get_question_by_id(self, i):
         try:
-            i2 = int(i)
+            i = int(i)
         except:
-            i2 = -1
-        if i2 <= 0:
+            i = -1
+        if i <= 0:
             question = Ke_question()
         else:
             encontrado = False
             for q in self.questions:
-                if q.id == i2:
+                if q.id == i:
                     self.increase_reward2question(q)
                     question = q
                     encontrado = True
                     break
             if not encontrado:
-                question = Ke_session.query(Ke_question).filter_by(id=i2).first()
+                question = Ke_session.query(Ke_question).filter_by(id=i).first()
                 try:
                     if question.exists():
                         self.questions.append(question)
@@ -451,11 +489,21 @@ class Super_cache:
         else:
             return Ke_session.query(Ke_question).order_by(Ke_question.id.desc())[num:num+50]
     
+    def remove_question(self, idq):
+        removed = False
+        i = 0
+        while i < len(self.questions):
+            if self.questions[i].id == idq:
+                del self.questions[i]
+                removed = True
+                break
+            i += 1
+        return removed
+    
     def increase_reward2question(self, q):
         if q.exists() and not q.is_solved() and random.randint(0, 99) == 0:
             q.add_reward(1)
             try:
-                Ke_session.add(q)
                 Ke_session.commit()
             except:
                 Ke_session.rollback()
@@ -465,12 +513,7 @@ class Super_cache:
     
     def new_chat_msg(self, text='', nick='anonymous'):
         if len(self.chat_log) > 100:
-            i = 0
-            while i < len(self.chat_log):
-                if i > 75:
-                    self.chat_log.remove( self.chat_log[i] )
-                else:
-                    i += 1
+            del self.chat_log[75:]
         text = cgi.escape(text.strip(), True)
         self.chat_log.insert(0, [datetime.now(), nick, text])
     
@@ -484,7 +527,7 @@ class Super_cache:
             else:
                 self.chat_users[i][2] -= 1
             if self.chat_users[i][2] < 1:
-                self.chat_users.remove( self.chat_users[i] )
+                del self.chat_users[i]
             else:
                 i += 1
         if not encontrado:
@@ -567,6 +610,7 @@ class Ke_web:
         self.ke_data['errormsg'] = False
         self.ke_data['message'] = False
         self.ke_data['runonload'] = False
+        self.ke_data['query'] = ''
         self.fast_log_in()
         self.sc.add_served_pages()
         if title == 'stats':
@@ -609,7 +653,6 @@ class Ke_web:
             elif user.password == hashlib.sha1(passwd).hexdigest():
                 user.new_log_key()
                 try:
-                    Ke_session.add(user)
                     Ke_session.commit()
                     self.set_current_user(user)
                     self.set_cookie('user_id', user.id)
@@ -684,8 +727,10 @@ class Ke_web:
         elif not self.current_user.logged_on:
             self.ke_data['errormsg'] = u'debes iniciar sesión o crear una cuenta'
         elif not self.current_user.set_email(email):
+            Ke_session.rollback()
             self.ke_data['errormsg'] = u'el email no es válido o ya existe'
         elif not self.current_user.set_nick(nick):
+            Ke_session.rollback()
             self.ke_data['errormsg'] = u'el nombre de usuario no es válido (debe contener entre 4 y 16 caracteres alfanuméricos) o ya existe'
         else:
             if passwd != '':
@@ -698,7 +743,6 @@ class Ke_web:
                 elif not self.current_user.set_password(npasswd):
                     self.ke_data['errormsg'] = u'la contraseña no es válida (debe contener entre 4 y 20 caracteres alfanuméricos)'
             try:
-                Ke_session.add(self.current_user)
                 Ke_session.commit()
                 self.ke_data['message'] = 'usuario modificado correctamente'
             except:
@@ -731,7 +775,6 @@ class Ke_web:
                     try:
                         user.new_log_key()
                         self.set_current_user(user)
-                        Ke_session.add(user)
                         Ke_session.commit()
                         self.set_cookie('user_id', user.id)
                         self.set_cookie('log_key', user.log_key)
@@ -769,7 +812,6 @@ class Ke_web:
                     try:
                         Ke_session.add(community)
                         self.current_user.add_points(-1)
-                        Ke_session.add(self.current_user)
                         Ke_session.commit()
                     except:
                         Ke_session.rollback()
@@ -821,37 +863,31 @@ class Ke_web:
             return u'Debes iniciar sesión o crear una cuenta'
     
     def get_front_questions(self):
+        finalmix = []
         mixto = []
-        if random.randint(0, 1) == 0:
-            for q in Ke_session.query(Ke_question).order_by(Ke_question.reward.desc())[0:20]:
-                i = 0
-                insertado = False
-                while i < len(mixto):
-                    if q.updated > mixto[i].updated:
-                        mixto.insert(i, q)
-                        insertado = True
-                        break
-                    i += 1
-                if not insertado:
-                    mixto.append(q)
-        else:
-            for q in Ke_session.query(Ke_question).order_by(Ke_question.updated.desc())[0:20]:
+        # últimas actualizaciones
+        for q in Ke_session.query(Ke_question).order_by(Ke_question.updated.desc())[0:10]:
+            mixto.append(q)
+        # preguntas con mayor recompensa
+        for q in Ke_session.query(Ke_question).order_by(Ke_question.reward.desc())[0:10]:
+            if q not in mixto:
                 mixto.append(q)
+        # preguntas del usuario
         if self.current_user.logged_on:
-            # insertamos en orden (por fecha)
             for q in self.current_user.questions[-5:]:
                 if q.updated > (datetime.today() - timedelta(days=7)) and q not in mixto:
-                    i = 0
-                    insertado = False
-                    while i < len(mixto):
-                        if q.updated > mixto[i].updated:
-                            mixto.insert(i, q)
-                            insertado = True
-                            break
-                        i += 1
-                    if not insertado:
-                        mixto.append(q)
-        return mixto
+                    mixto.append(q)
+        # ordenamos por fecha pero dejando las preguntas solucionadas al final
+        while len(mixto) > 0:
+            seleccion = mixto[0]
+            for m in mixto:
+                if seleccion.is_solved():
+                    seleccion = m
+                elif m.updated > seleccion.updated:
+                    seleccion = m
+            mixto.remove(seleccion)
+            finalmix.append(seleccion)
+        return finalmix
     
     def get_answers(self, idq, order='grade'):
         answers = []
@@ -925,7 +961,6 @@ class Ke_web:
                             question.set_status(1)
                         try:
                             Ke_session.add(answer)
-                            Ke_session.add(question)
                             Ke_session.commit()
                             self.ke_data['message'] = u'respuesta guardada correctamente <a href="#'+str(len(question.answers))+'">@'+str(len(question.answers))+'</a>'
                         except:
@@ -959,8 +994,6 @@ class Ke_web:
                             self.current_user.add_points(1)
                             message = u'voto incorrecto'
                         try:
-                            Ke_session.add(self.current_user)
-                            Ke_session.add(answer)
                             Ke_session.commit()
                         except:
                             Ke_session.rollback()
@@ -989,8 +1022,6 @@ class Ke_web:
                         answer.question.updated = datetime.today()
                         self.current_user.add_points(5)
                         try:
-                            Ke_session.add(answer)
-                            Ke_session.add(self.current_user)
                             Ke_session.commit()
                             message = u'OK'
                         except:
