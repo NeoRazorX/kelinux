@@ -36,8 +36,8 @@
 <div class="rounded">
     <h2>Respuestas: {{ question.num_answers }}
         <span>ordenar por:
-            <a href="#" onclick="set_answer_order('grade')">nota</a> |
-            <a href="#" onclick="set_answer_order('normal')">fecha</a>
+            <a id="answers_order_grade" class="selected" href="#" onclick="set_answer_order('grade')">nota</a> |
+            <a id="answers_order_normal" href="#" onclick="set_answer_order('normal')">fecha</a>
         </span>
     </h2>
     <div id="question_answers"></div>

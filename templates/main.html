@@ -44,20 +44,24 @@
     <h2>
         Una lista de preguntas para ti:
         {% if ke_data.user.logged_on %}
-            <span><a href="{{ ke_data.user.get_link() }}">ver todas mis preguntas</a></span>
+            <span><a class="link" href="{{ ke_data.user.get_link() }}">ver todas mis preguntas</a></span>
         {% endif %}
     </h2>
+    
+    <div class="questions">
     {% for q in question_list %}
-        <div class="reward">{{ q.reward }}</div>
-        <div class="chat_msg_c" onclick="jump2url('{{ q.get_link() }}')">
-            <span class="nick">{{ q.user.nick }}</span>
-            <span class="date">{{ q.updated|timesince }}</span>
-            <span class="tag">{{ q.num_answers }} respuestas</span>
-            <span class="tag">{{ q.get_status() }}</span>
-            <br/>
-            {{ q.get_resume() }}
+        <div class="question_box">
+            <div class="reward">{{ q.reward }}</div>
+            <div class="question" onclick="jump2url('{{ q.get_link() }}')">
+                <span class="nick">{{ q.user.nick }}</span>
+                <span class="date">{{ q.updated|timesince }}</span>
+                <span class="tag">{{ q.num_answers }} respuestas</span>
+                <span class="tag">{{ q.get_status() }}</span>
+                <div class="resume">{{ q.get_resume() }}</div>
+            </div>
         </div>
     {% endfor %}
+    </div>
 </div>
 
 {% include "footer.html" %}

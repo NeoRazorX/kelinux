@@ -1,21 +1,26 @@
 {% include "header.html" %}
 
 <div id="finder_ressults">
-<div class="rounded">
-<h2>resultados de la búsqueda "{{ ke_data.query }}":</h2>
-{% for q in questions %}
-    <div class="reward">{{ q.reward }}</div>
-    <div class="chat_msg_c" onclick="jump2url('{{ q.get_link() }}')">
-        <span class="nick">{{ q.user.nick }}</span>
-        <span class="date">{{ q.updated|timesince }}</span>
-        <span class="tag">{{ q.num_answers }} respuestas</span>
-        <span class="tag">{{ q.get_status() }}</span>
-        <br/>
-        {{ q.get_resume() }}
+    <div class="rounded">
+        <h2>resultados de la búsqueda "{{ ke_data.query }}":</h2>
+        <div class="questions">
+        {% for q in questions %}
+            <div class="question_box">
+                <div class="reward">{{ q.reward }}</div>
+                <div class="question" onclick="jump2url('{{ q.get_link() }}')">
+                    <span class="nick">{{ q.user.nick }}</span>
+                    <span class="date">{{ q.updated|timesince }}</span>
+                    <span class="tag">{{ q.num_answers }} respuestas</span>
+                    <span class="tag">{{ q.get_status() }}</span>
+                    <div class="resume">{{ q.get_resume() }}</div>
+                </div>
+            </div>
+        {% endfor %}
+        </div>
     </div>
-{% endfor %}
-</div>
-<div class="message">¿No encuentras lo que buscas? Usa el botón <b>crear</b> y escribe tus dudas y/o preguntas!</div>
+    <div class="message">
+        ¿No encuentras lo que buscas? Usa el botón <b>crear</b> y escribe tus dudas y/o preguntas!
+    </div>
 </div>
 
 {% include "footer.html" %}

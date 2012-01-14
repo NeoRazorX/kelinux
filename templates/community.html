@@ -37,23 +37,29 @@
         <h2>
             Lista de preguntas:
             <span>ordenar por:
-                <a href="{{ community.get_link() }}/created">creada</a> |
-                <a href="{{ community.get_link() }}/updated">modificada</a> |
-                <a href="{{ community.get_link() }}/reward">recompensa</a> |
-                <a href="{{ community.get_link() }}/status">estado</a>
+                <a href="{{ community.get_link() }}/author" {{ "author"|highlight_order(order) }}>autor</a> |
+                <a href="{{ community.get_link() }}/created" {{ "created"|highlight_order(order) }}>creada</a> |
+                <a href="{{ community.get_link() }}/status" {{ "status"|highlight_order(order) }}>estado</a> |
+                <a href="{{ community.get_link() }}/updated" {{ "updated"|highlight_order(order) }}>modificada</a> |
+                <a href="{{ community.get_link() }}/reward" {{ "reward"|highlight_order(order) }}>recompensa</a>
             </span>
         </h2>
+        
+        <div class="questions">
         {% for q in questions %}
-            <div class="reward">{{ q.reward }}</div>
-            <div class="chat_msg_c" onclick="jump2url('{{ q.get_link() }}')">
-                <span class="nick">{{ q.user.nick }}</span>
-                <span class="date">{{ q.updated|timesince }}</span>
-                <span class="tag">{{ q.num_answers }} respuestas</span>
-                <span class="tag">{{ q.get_status() }}</span>
-                <br/>
-                {{ q.get_resume() }}
+            <div class="question_box">
+                <div class="reward">{{ q.reward }}</div>
+                <div class="question" onclick="jump2url('{{ q.get_link() }}')">
+                    <span class="nick">{{ q.user.nick }}</span>
+                    <span class="date">{{ q.updated|timesince }}</span>
+                    <span class="tag">{{ q.num_answers }} respuestas</span>
+                    <span class="tag">{{ q.get_status() }}</span>
+                    <div class="resume">{{ q.get_resume() }}</div>
+                </div>
             </div>
         {% endfor %}
+        </div>
+        
         <table width="100%">
         <tr>
         {% if prevp >= 0 %}

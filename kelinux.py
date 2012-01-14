@@ -26,6 +26,7 @@ env = Environment(loader=FileSystemLoader(Ke_current_path+'/templates'))
 env.filters['timesince'] = timesince
 env.filters['highlight_page'] = highlight_page
 env.filters['linebreaks'] = linebreaks
+env.filters['highlight_order'] = highlight_order
 
 # definimos la configuración de cherrypy
 cp_config = {
@@ -144,14 +145,17 @@ class Main_web(Ke_web):
                 num = 0
             if num < 0:
                 num = 0
+            query1 = Ke_session.query(Ke_question).join((Ke_community, Ke_question.communities)).filter(Ke_question.communities.any(Ke_community.id==community.id))
             if order == 'updated':
-                questions = Ke_session.query(Ke_question).join((Ke_community, Ke_question.communities)).filter(Ke_question.communities.any(Ke_community.id==community.id)).order_by(Ke_question.updated.desc())[num:num+50]
+                questions = query1.order_by(Ke_question.updated.desc())[num:num+50]
             elif order == 'reward':
-                questions = Ke_session.query(Ke_question).join((Ke_community, Ke_question.communities)).filter(Ke_question.communities.any(Ke_community.id==community.id)).order_by(Ke_question.reward.desc())[num:num+50]
+                questions = query1.order_by(Ke_question.reward.desc())[num:num+50]
             elif order == 'status':
-                questions = Ke_session.query(Ke_question).join((Ke_community, Ke_question.communities)).filter(Ke_question.communities.any(Ke_community.id==community.id)).order_by(Ke_question.status)[num:num+50]
+                questions = query1.order_by(Ke_question.status)[num:num+50]
+            elif order == 'author':
+                questions = query1.order_by(Ke_question.user_id)[num:num+50]
             else:
-                questions = Ke_session.query(Ke_question).join((Ke_community, Ke_question.communities)).filter(Ke_question.communities.any(Ke_community.id==community.id)).order_by(Ke_question.id.desc())[num:num+50]
+                questions = query1.order_by(Ke_question.id.desc())[num:num+50]
             tmpl = env.get_template('community.html')
             return tmpl.render(community=community,
                                questions=questions,
@@ -160,7 +164,7 @@ class Main_web(Ke_web):
                                nextp=(num+50),
                                ke_data=self.ke_data)
         else:
-            raise cherrypy.HTTPRedirect('/community_list')
+            raise cherrypy.HTTPRedirect('/error_404')
     
     @cherrypy.expose
     def edit_community(self, idc='', name='', description='', **params):
@@ -178,11 +182,8 @@ class Main_web(Ke_web):
                         self.ke_data['errormsg'] = u'error al borrar la comunidad de la base de datos'
                     if not self.ke_data['errormsg']:
                         raise cherrypy.HTTPRedirect('/community_list')
-                elif name != '' and description != '':
-                    if not community.set_name(name):
-                        Ke_session.rollback()
-                        self.ke_data['errormsg'] = u'el nombre no es válido'
-                    elif not community.set_description(description):
+                elif description != '':
+                    if not community.set_description(description):
                         Ke_session.rollback()
                         self.ke_data['errormsg'] = u'la descripción no es válida'
                     else:
@@ -196,7 +197,7 @@ class Main_web(Ke_web):
             tmpl = env.get_template('edit_community.html')
             return tmpl.render(community=community, ke_data=self.ke_data)
         else:
-            raise cherrypy.HTTPRedirect('/community_list')
+            raise cherrypy.HTTPRedirect('/error_404')
     
     @cherrypy.expose
     def join_community(self, name='', **params):
@@ -245,7 +246,7 @@ class Main_web(Ke_web):
             tmpl = env.get_template('question.html')
             return tmpl.render(question=question, ke_data=self.ke_data)
         else:
-            raise cherrypy.HTTPRedirect('/question_list')
+            raise cherrypy.HTTPRedirect('/error_404')
     
     @cherrypy.expose
     def edit_question(self, idq='', **params):
@@ -255,7 +256,7 @@ class Main_web(Ke_web):
             communities = []
             for c in question.communities:
                 communities.append(c)
-            for c in question.user.communities:
+            for c in self.current_user.communities:
                 if c not in communities:
                     communities.append(c)
             if self.current_user.id == question.user.id or self.current_user.is_admin():
@@ -293,7 +294,7 @@ class Main_web(Ke_web):
                                communities=communities,
                                ke_data=self.ke_data)
         else:
-            raise cherrypy.HTTPRedirect('/question_list')
+            raise cherrypy.HTTPRedirect('/error_404')
     
     @cherrypy.expose
     def question_reward(self, idq='', **params):
@@ -329,9 +330,9 @@ class Main_web(Ke_web):
                            ke_data=self.ke_data)
     
     @cherrypy.expose
-    def user(self, idu='', order='updated', num=0, **params):
+    def user(self, nick='', order='updated', num=0, **params):
         self.first_step('user')
-        user = self.sc.get_user_by_id(idu)
+        user = self.sc.get_user_by_nick(nick)
         if user.exists():
             try:
                 num = int(num)
@@ -339,14 +340,18 @@ class Main_web(Ke_web):
                 num = 0
             if num < 0:
                 num = 0
+            query1 = Ke_session.query(Ke_question).filter_by(user_id=user.id)
+            query2 = Ke_session.query(Ke_question).join((Ke_answer, Ke_question.answers)).filter(Ke_question.answers.any(Ke_answer.user==user))
             if order == 'updated':
-                questions = Ke_session.query(Ke_question).filter_by(user_id=user.id).order_by(Ke_question.updated.desc())[num:num+50]
+                questions = query1.union(query2).order_by(Ke_question.updated.desc())[num:num+50]
             elif order == 'reward':
-                questions = Ke_session.query(Ke_question).filter_by(user_id=user.id).order_by(Ke_question.reward.desc())[num:num+50]
+                questions = query1.union(query2).order_by(Ke_question.reward.desc())[num:num+50]
             elif order == 'status':
-                questions = Ke_session.query(Ke_question).filter_by(user_id=user.id).order_by(Ke_question.status)[num:num+50]
+                questions = query1.union(query2).order_by(Ke_question.status)[num:num+50]
+            elif order == 'author':
+                questions = query1.union(query2).order_by(Ke_question.user_id)[num:num+50]
             else:
-                questions = Ke_session.query(Ke_question).filter_by(user_id=user.id).order_by(Ke_question.id.desc())[num:num+50]
+                questions = query1.union(query2).order_by(Ke_question.id.desc())[num:num+50]
             tmpl = env.get_template('user.html')
             return tmpl.render(user=user,
                                questions=questions,
@@ -355,7 +360,7 @@ class Main_web(Ke_web):
                                nextp=(num+50),
                                ke_data=self.ke_data)
         else:
-            raise cherrypy.HTTPRedirect('/user_list')
+            raise cherrypy.HTTPRedirect('/error_404')
     
     @cherrypy.expose
     def stats(self, **params):
@@ -383,12 +388,18 @@ class Main_web(Ke_web):
     @cherrypy.expose
     def sitemap(self, **params):
         self.first_step('sitemap')
+        communities = self.sc.get_all_communities()
         questions = self.get_front_questions()
+        users = self.sc.get_all_users()
         document = "Content-Type: text/xml\n\n"
         document += "<?xml version='1.0' encoding='UTF-8'?>\n"
         document += "<urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'>\n"
+        for c in communities:
+            document += "<url><loc>" + c.get_link() + "</loc><lastmod>" + str(c.created).split(' ')[0] + "</lastmod><changefreq>always</changefreq><priority>0.8</priority></url>\n"
         for q in questions:
             document += "<url><loc>" + q.get_link() + "</loc><lastmod>" + str(q.created).split(' ')[0] + "</lastmod><changefreq>always</changefreq><priority>0.8</priority></url>\n"
+        for u in users:
+            document += "<url><loc>" + u.get_link() + "</loc><lastmod>" + str(u.created).split(' ')[0] + "</lastmod><changefreq>always</changefreq><priority>0.8</priority></url>\n"
         document += "</urlset>\n"
         return document
 

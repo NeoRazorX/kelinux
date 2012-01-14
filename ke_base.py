@@ -108,9 +108,9 @@ class Ke_user(Base):
     
     def get_link(self, full=False):
         if full:
-            return APPDOMAIN+'/user/'+str(self.id)
+            return APPDOMAIN+'/user/'+self.nick
         else:
-            return '/user/'+str(self.id)
+            return '/user/'+self.nick
 
 
 # tabla necesaria para la relación muchos a muchos entre Ke_user y Ke_community
@@ -148,8 +148,13 @@ class Ke_community(Base):
     def set_name(self, n):
         n = n.lower()
         if re.match("^[a-zA-Z0-9_]{3,20}$", n):
-            self.name = n
-            return True
+            if n == self.name:
+                return True
+            elif not Ke_session.query(Ke_community).filter_by(name=n).first():
+                self.name = n
+                return True
+            else:
+                return False
         else:
             return False
     
@@ -480,14 +485,17 @@ class Super_cache:
         return question
     
     def get_all_questions(self, order='created', num=0):
+        query = Ke_session.query(Ke_question)
         if order == 'updated':
-            return Ke_session.query(Ke_question).order_by(Ke_question.updated.desc())[num:num+50]
+            return query.order_by(Ke_question.updated.desc())[num:num+50]
         elif order == 'reward':
-            return Ke_session.query(Ke_question).order_by(Ke_question.reward.desc())[num:num+50]
+            return query.order_by(Ke_question.reward.desc())[num:num+50]
         elif order == 'status':
-            return Ke_session.query(Ke_question).order_by(Ke_question.status)[num:num+50]
+            return query.order_by(Ke_question.status)[num:num+50]
+        elif order == 'author':
+            return query.order_by(Ke_question.user_id)[num:num+50]
         else:
-            return Ke_session.query(Ke_question).order_by(Ke_question.id.desc())[num:num+50]
+            return query.order_by(Ke_question.id.desc())[num:num+50]
     
     def remove_question(self, idq):
         removed = False
@@ -523,16 +531,20 @@ class Super_cache:
         while i < len(self.chat_users):
             if self.chat_users[i][0] == ip and self.chat_users[i][1].nick == user.nick:
                 encontrado = True
-                self.chat_users[i][2] = 20
-            else:
-                self.chat_users[i][2] -= 1
-            if self.chat_users[i][2] < 1:
-                del self.chat_users[i]
-            else:
-                i += 1
+                self.chat_users[i][2] = datetime.today()
+                break
+            i += 1
+        self.check_chat_users()
         if not encontrado:
-            self.chat_users.append([ip, user, 20])
+            self.chat_users.append([ip, user, datetime.today()])
         return self.chat_users
+    
+    def check_chat_users(self):
+        i = 0
+        while i < len(self.chat_users):
+            if self.chat_users[i][2] < (datetime.today() - timedelta(minutes=2)):
+                del self.chat_users[i]
+            i += 1
     
     def new_search(self, query):
         encontrada = False
@@ -552,6 +564,7 @@ class Super_cache:
         self.stats['users_m'] = len(self.users)
         self.stats['communities_m'] = len(self.communities)
         self.stats['questions_m'] = len(self.questions)
+        self.check_chat_users()
         self.stats['chat_users'] = len(self.chat_users)
         return self.stats
     
@@ -720,18 +733,13 @@ class Ke_web:
             raise cherrypy.HTTPRedirect('/')
     
     def update_user(self, email='', nick='', passwd='', npasswd='', npasswd2=''):
-        if email == '':
-            self.ke_data['errormsg'] = 'introduce un email'
-        elif nick == '':
-            self.ke_data['errormsg'] = 'introduce un nombre de usuario'
-        elif not self.current_user.logged_on:
+        if not self.current_user.logged_on:
             self.ke_data['errormsg'] = u'debes iniciar sesión o crear una cuenta'
+        elif email == '':
+            self.ke_data['errormsg'] = 'introduce un email'
         elif not self.current_user.set_email(email):
             Ke_session.rollback()
             self.ke_data['errormsg'] = u'el email no es válido o ya existe'
-        elif not self.current_user.set_nick(nick):
-            Ke_session.rollback()
-            self.ke_data['errormsg'] = u'el nombre de usuario no es válido (debe contener entre 4 y 16 caracteres alfanuméricos) o ya existe'
         else:
             if passwd != '':
                 if self.current_user.password != hashlib.sha1(passwd).hexdigest():

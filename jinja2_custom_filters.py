@@ -50,3 +50,9 @@ def highlight_page(name, selection=''):
     else:
         return ''
 
+def highlight_order(name, order=''):
+    if name == order:
+        return "class='selected'"
+    else:
+        return ''
+

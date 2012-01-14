@@ -34,6 +34,40 @@ h2 span {
     font-size: 15px;
 }
 
+h2 span a {
+    color: black;
+    text-decoration: none;
+}
+
+h2 span a.link {
+    color: blue;
+    text-decoration: underline;
+}
+
+h2 span a.selected {
+    text-decoration: underline;
+}
+
+div.error {
+    background-color: #F4F596;
+    border: 1px solid #E4E58D;
+    padding: 10px;
+    margin: 5px;
+    text-align: center;
+}
+
+div.message {
+    background-color: #D8DFEA;
+    border: 1px solid silver;
+    padding: 10px;
+    margin: 5px;
+    text-align: center;
+}
+
+h1:first-letter, h2:first-letter, div.error:first-letter, div.message:first-letter {
+    text-transform: capitalize;
+}
+
 input[type='submit'], input[type='button'] {
     text-transform: capitalize;
     font-variant: small-caps;
@@ -254,26 +288,6 @@ div.d_right {
     margin: 5px;
 }
 
-div.error {
-    background-color: #F4F596;
-    border: 1px solid #E4E58D;
-    padding: 10px;
-    margin: 5px;
-    text-align: center;
-}
-
-div.message {
-    background-color: #D8DFEA;
-    border: 1px solid silver;
-    padding: 10px;
-    margin: 5px;
-    text-align: center;
-}
-
-h1:first-letter, h2:first-letter, div.error:first-letter, div.message:first-letter {
-    text-transform: capitalize;
-}
-
 div.d_list div.element, div.d_list div.element_c {
     width: 150px;
     padding-top: 3px;
@@ -319,23 +333,121 @@ div#question_info {
     min-height: 240px;
 }
 
-div.long_text {
-    padding-top: 10px;
-    padding-bottom: 10px;
+div.questions {
+    display: table;
+    width: 100%;
 }
 
-div.chat_msg, div.chat_msg_c {
+div.questions div.question_box {
+    display: table-row;
+}
+
+div.questions div.question_box:hover {
+    background-color: #D8DFEA;
+    cursor: pointer;
+}
+
+div.questions div.question_box div.reward {
+    display: table-cell;
+    vertical-align: middle;
+    font-size: 22px;
+    padding: 5px;
+    margin-right: 5px;
+}
+
+div.questions div.question_box div.question {
+    display: table-cell;
+    vertical-align: top;
     padding: 5px;
     min-height: 30px;
 }
 
-div.chat_msg:hover {
+div.questions div.question_box div.question div.resume {
+    margin-top: 3px;
+}
+
+div.answers {
+    display: table;
+    width: 100%;
+}
+
+div.answers div.answer_box, div.answers div.answer_box2 {
+    display: table-row;
+}
+
+div.answers div.answer_box2 {
     background-color: #D8DFEA;
 }
 
-div.chat_msg_c:hover {
-    background-color: #D8DFEA;
+div.answers table.grade {
+    display: table-cell;
+    vertical-align: top;
+    text-align: center;
+    padding: 5px;
+    margin-right: 5px;
+    width: 100px;
+}
+
+div.answers table.grade td {
+    color: transparent;
+    font-weight: bold;
+}
+
+div.answers span.grade {
+    font-size: 20px;
+    color: black;
+}
+
+div.answers table.grade td.add_grade, table.grade td.minus_grade {
+    min-width: 20px;
+    border-top-left-radius: 2px 2px;
+    border-top-right-radius: 2px 2px;
+    border-bottom-left-radius: 2px 2px;
+    border-bottom-right-radius: 2px 2px;
+}
+
+div.answers table.grade td.mark_solution {
+    padding-left: 3px;
+    padding-right: 3px;
+    border-top-left-radius: 2px 2px;
+    border-top-right-radius: 2px 2px;
+    border-bottom-left-radius: 2px 2px;
+    border-bottom-right-radius: 2px 2px;
+}
+
+div.answers table.grade:hover td.add_grade,
+div.answers table.grade:hover td.minus_grade,
+div.answers table.grade:hover td.mark_solution {
+    background-color: #333333;
+    color: white;
+}
+
+div.answers table.grade td.add_grade:hover,
+div.answers table.grade td.minus_grade:hover,
+div.answers table.grade td.mark_solution:hover {
     cursor: pointer;
+}
+
+div.answers table.grade td.add_grade:hover {
+    background-color: green;
+}
+
+div.answers table.grade td.minus_grade:hover {
+    background-color: red;
+}
+
+div.answers table.grade td.mark_solution:hover {
+    background-color: #4A8BF5;
+}
+
+div.answers div.answer, div.answer_s {
+    display: table-cell;
+    vertical-align: top;
+    padding: 5px;
+}
+
+div.answers div.answer_s {
+    border: 3px double #4A8BF5;;
 }
 
 span.nick, span.nick_c {
@@ -380,13 +492,6 @@ span.date {
     padding-left: 10px;
 }
 
-div.reward {
-    float: left;
-    font-size: 22px;
-    padding: 5px;
-    margin-right: 5px;
-}
-
 div.reward2 {
     float: left;
     font-size: 22px;
@@ -402,83 +507,9 @@ div.reward2 a {
     color: black;
 }
 
-div.answers {
-    display: table;
-    width: 100%;
-}
-
-div.answer_box, div.answer_box2 {
-    display: table-row;
-}
-
-div.answer_box2 {
-    background-color: #D8DFEA;
-}
-
-table.grade {
-    padding: 5px;
-    margin-right: 5px;
-    text-align: center;
-    display: table-cell;
-    width: 90px;
-}
-
-table.grade td {
-    color: transparent;
-    font-weight: bold;
-}
-
-span.grade {
-    font-size: 20px;
-    color: black;
-}
-
-table.grade td.add_grade, table.grade td.minus_grade {
-    width: 20px;
-    border-top-left-radius: 2px 2px;
-    border-top-right-radius: 2px 2px;
-    border-bottom-left-radius: 2px 2px;
-    border-bottom-right-radius: 2px 2px;
-}
-
-table.grade td.mark_solution {
-    padding-left: 3px;
-    padding-right: 3px;
-    border-top-left-radius: 2px 2px;
-    border-top-right-radius: 2px 2px;
-    border-bottom-left-radius: 2px 2px;
-    border-bottom-right-radius: 2px 2px;
-}
-
-table.grade:hover td.add_grade, table.grade:hover td.minus_grade, table.grade:hover td.mark_solution {
-    background-color: #333333;
-    color: white;
-}
-
-table.grade td.add_grade:hover, table.grade td.minus_grade:hover, table.grade td.mark_solution:hover {
-    cursor: pointer;
-}
-
-table.grade td.add_grade:hover {
-    background-color: green;
-}
-
-table.grade td.minus_grade:hover {
-    background-color: red;
-}
-
-table.grade td.mark_solution:hover {
-    background-color: #4A8BF5;
-}
-
-div.answer, div.answer_s {
-    display: table-cell;
-    vertical-align: top;
-    padding: 5px;
-}
-
-div.answer_s {
-    border: 3px double #4A8BF5;;
+div.long_text {
+    padding-top: 10px;
+    padding-bottom: 10px;
 }
 
 div.code {
@@ -525,6 +556,16 @@ td.user_list {
     vertical-align: top;
     width: 260px;
 }
+
+div.chat_msg {
+    padding: 5px;
+    min-height: 30px;
+}
+
+div.chat_msg:hover {
+    background-color: #D8DFEA;
+}
+
 
 div#copyright {
     text-align: center;
