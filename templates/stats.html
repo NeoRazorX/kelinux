@@ -14,24 +14,12 @@
 <br/>
 
 <div class="rounded">
-<h2>Datos en memoria:</h2>
-<div class="d_list">
-    <div class="element">Usuarios: {{ ke_data.stats.users_m }}</div>
-    <div class="element">Comunidades: {{ ke_data.stats.communities_m }}</div>
-    <div class="element">Preguntas: {{ ke_data.stats.questions_m }}</div>
-    <div class="element">Búsquedas: {{ ke_data.stats.searches }}</div>
-</div>
-</div>
-
-<br/>
-
-<div class="rounded">
-<h2>Búsquedas:</h2>
-<div class="d_list">
+<h2>Búsquedas: {{ ke_data.stats.searches }}</h2>
+<ul>
 {% for s in searches %}
-    <div class="element">{{ s[0] }} ({{ s[1] }})</div>
+    <li>{{ s[0] }} ({{ s[1] }})</li>
 {% endfor %}
-</div>
+</ul>
 </div>
 
 {% include "footer.html" %}

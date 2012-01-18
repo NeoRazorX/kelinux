@@ -205,7 +205,6 @@ div#shadow_box {
     height: 100%;
     background: #000;
     opacity: 0.7;
-    filter: alpha(opacity = 70);
     display: none;
 }
 
@@ -385,7 +384,7 @@ div.answers table.grade {
     text-align: center;
     padding: 5px;
     margin-right: 5px;
-    width: 100px;
+    width: 80px;
 }
 
 div.answers table.grade td {
@@ -475,16 +474,25 @@ span.community_c:hover {
     cursor: pointer;
 }
 
-span.tag {
-    border: 1px solid silver;
+span.tag, span.num_answers {
+    background-color: #555555;
+    color: white;
+    font-weight: bold;
     border-top-left-radius: 2px 2px;
     border-top-right-radius: 2px 2px;
     border-bottom-left-radius: 2px 2px;
     border-bottom-right-radius: 2px 2px;
-    margin-left: 5px;
-    padding-left: 5px;
-    padding-right: 5px;
+    padding-left: 3px;
+    padding-right: 3px;
+}
+
+span.tag {
+    margin-right: 10px;
+}
+
+span.num_answers {
     float: right;
+    margin-left: 10px;
 }
 
 span.date {
@@ -557,12 +565,12 @@ td.user_list {
     width: 260px;
 }
 
-div.chat_msg {
+div.chat_msg, div.chat_msg2 {
     padding: 5px;
     min-height: 30px;
 }
 
-div.chat_msg:hover {
+div.chat_msg2 {
     background-color: #D8DFEA;
 }
 

@@ -108,7 +108,15 @@ function create_question()
 
 function jump2url(url)
 {
-    window.location.href = url;
+    if(window.event)
+    {
+        if(window.event.which == 2)
+            window.open(url);
+        else
+            window.location.href = url;
+    }
+    else
+        window.location.href = url;
 }
 
 var req_new_password;

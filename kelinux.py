@@ -4,20 +4,57 @@
 import os, cherrypy
 from ke_config import *
 from ke_base import *
-from sqlalchemy import MetaData
+from sqlalchemy import MetaData, create_engine
+from sqlalchemy.orm import scoped_session, sessionmaker
 from jinja2 import Environment, FileSystemLoader
 from jinja2_custom_filters import *
+from cherrypy.process import wspbus, plugins
 from cherrypy.process.plugins import PIDFile, Daemonizer
 from datetime import datetime
 
+
+class SAEnginePlugin(plugins.SimplePlugin):
+    def __init__(self, bus):
+        plugins.SimplePlugin.__init__(self, bus)
+        self.sa_engine = None
+        self.bus.subscribe("bind", self.bind)
+    
+    def start(self):
+        # creamos el engine para sqlalchemy
+        self.sa_engine = create_engine("mysql://%s:%s@%s:%s/%s" % (MYSQL_USER, MYSQL_PASS, MYSQL_HOST, MYSQL_PORT, MYSQL_DBNAME),
+                                       encoding='utf-8', convert_unicode=True, echo=APP_DEBUG)
+        # creamos/comprobamos la estructura de tablas
+        Base.metadata.create_all(self.sa_engine)
+    
+    def stop(self):
+        if self.sa_engine:
+            self.sa_engine.dispose()
+            self.sa_engine = None
+    
+    def bind(self, session):
+        session.configure(bind=self.sa_engine)
+
+
+class SATool(cherrypy.Tool):
+    def __init__(self):
+        cherrypy.Tool.__init__(self, 'on_start_resource', self.bind_session, priority=20)
+        self.session = scoped_session(sessionmaker(autoflush=False, autocommit=False))
+    
+    def _setup(self):
+        cherrypy.Tool._setup(self)
+        cherrypy.request.hooks.attach('on_end_resource', self.commit_transaction, priority=80)
+    
+    def bind_session(self):
+        cherrypy.engine.publish('bind', self.session)
+        cherrypy.request.db = self.session
+    
+    def commit_transaction(self):
+        cherrypy.request.db = None
+        self.session.remove()
+
+
 # nos guardamos el path
 Ke_current_path = os.getcwd()
-
-# comprobamos la estructura de tablas de la base de datos
-Ke_user().metadata.create_all(Ke_engine)
-Ke_community().metadata.create_all(Ke_engine)
-Ke_question().metadata.create_all(Ke_engine)
-Ke_answer().metadata.create_all(Ke_engine)
 
 # cargamos las templates para jinja2
 env = Environment(loader=FileSystemLoader(Ke_current_path+'/templates'))
@@ -27,6 +64,7 @@ env.filters['timesince'] = timesince
 env.filters['highlight_page'] = highlight_page
 env.filters['linebreaks'] = linebreaks
 env.filters['highlight_order'] = highlight_order
+env.filters['partial_ip'] = partial_ip
 
 # definimos la configuración de cherrypy
 cp_config = {
@@ -35,11 +73,12 @@ cp_config = {
         'server.socket_port': APP_PORT,
         'server.thread_pool': APP_THREAD_POOL,
         'server.socket_queue_size': APP_SOCKET_QUEUE_SIZE,
-        'log.access_file': Ke_current_path+'/logs/kelinux_access.'+str(datetime.today().isoformat(' '))+'.log',
-        'log.error_file': Ke_current_path+'/logs/kelinux_error.'+str(datetime.today().isoformat(' '))+'.log',
+        'log.access_file': Ke_current_path+'/logs/access.'+str(datetime.today().isoformat(' '))+'.log',
+        'log.error_file': Ke_current_path+'/logs/error.'+str(datetime.today().isoformat(' '))+'.log',
         'tools.encode.on': True,
         'toots.encode.encoding': 'utf-8',
-        'tools.decode.on': True
+        'tools.decode.on': True,
+        'tools.db.on': True
     },
     '/favicon.ico': {
         'tools.staticfile.on': True,
@@ -65,7 +104,7 @@ class Main_web(Ke_web):
         self.first_step('index')
         tmpl = env.get_template('main.html')
         return tmpl.render(question_list=self.get_front_questions(),
-                           community_list=self.sc.get_all_communities(),
+                           community_list=self.get_all_communities(),
                            ke_data=self.ke_data)
     
     @cherrypy.expose
@@ -83,7 +122,7 @@ class Main_web(Ke_web):
             elif option == 'register':
                 self.register(email, nick, passwd, passwd2)
             elif option == 'update':
-                self.update_user(email, nick, passwd, npasswd, npasswd2)
+                self.update_user(email, passwd, npasswd, npasswd2)
             elif option == 'log_out':
                 self.do_log_out()
         tmpl = env.get_template('log_in.html')
@@ -106,8 +145,9 @@ class Main_web(Ke_web):
     def finder(self, query='', **params):
         self.first_step('finder')
         self.ke_data['query'] = query
+        self.run_onload('document.f_finder.query.focus()')
         tmpl = env.get_template('finder.html')
-        return tmpl.render(questions=self.sc.new_search(query),
+        return tmpl.render(questions=self.new_search(query),
                            ke_data=self.ke_data)
     
     @cherrypy.expose
@@ -130,13 +170,13 @@ class Main_web(Ke_web):
     def community_list(self, **params):
         self.first_step('community_list')
         tmpl = env.get_template('community_list.html')
-        return tmpl.render(community_list=self.sc.get_all_communities(),
+        return tmpl.render(community_list=self.get_all_communities(),
                            ke_data=self.ke_data)
     
     @cherrypy.expose
     def community(self, name='', order='updated', num=0, **params):
         self.first_step('community')
-        community = self.sc.get_community_by_name(name)
+        community = self.get_community_by_name(name)
         if community.exists():
             self.set_page_description( community.description )
             try:
@@ -145,17 +185,20 @@ class Main_web(Ke_web):
                 num = 0
             if num < 0:
                 num = 0
-            query1 = Ke_session.query(Ke_question).join((Ke_community, Ke_question.communities)).filter(Ke_question.communities.any(Ke_community.id==community.id))
-            if order == 'updated':
-                questions = query1.order_by(Ke_question.updated.desc())[num:num+50]
-            elif order == 'reward':
-                questions = query1.order_by(Ke_question.reward.desc())[num:num+50]
-            elif order == 'status':
-                questions = query1.order_by(Ke_question.status)[num:num+50]
-            elif order == 'author':
-                questions = query1.order_by(Ke_question.user_id)[num:num+50]
-            else:
-                questions = query1.order_by(Ke_question.id.desc())[num:num+50]
+            try:
+                query1 = cherrypy.request.db.query(Ke_question).join((Ke_community, Ke_question.communities)).filter(Ke_question.communities.any(Ke_community.id==community.id))
+                if order == 'updated':
+                    questions = query1.order_by(Ke_question.updated.desc())[num:num+50]
+                elif order == 'reward':
+                    questions = query1.order_by(Ke_question.reward.desc())[num:num+50]
+                elif order == 'status':
+                    questions = query1.order_by(Ke_question.status)[num:num+50]
+                elif order == 'author':
+                    questions = query1.order_by(Ke_question.user_id)[num:num+50]
+                else:
+                    questions = query1.order_by(Ke_question.id.desc())[num:num+50]
+            except:
+                questions = []
             tmpl = env.get_template('community.html')
             return tmpl.render(community=community,
                                questions=questions,
@@ -169,29 +212,28 @@ class Main_web(Ke_web):
     @cherrypy.expose
     def edit_community(self, idc='', name='', description='', **params):
         self.first_step('edit community')
-        community = self.sc.get_community_by_id(idc)
+        community = self.get_community_by_id(idc)
         if community.exists():
             if self.current_user.is_admin():
                 if params.get('remove', '') == str(community.id):
-                    Ke_session.delete(community)
-                    self.sc.remove_community(community.id)
+                    cherrypy.request.db.delete(community)
                     try:
-                        Ke_session.commit()
+                        cherrypy.request.db.commit()
                     except:
-                        Ke_session.rollback()
+                        cherrypy.request.db.rollback()
                         self.ke_data['errormsg'] = u'error al borrar la comunidad de la base de datos'
                     if not self.ke_data['errormsg']:
                         raise cherrypy.HTTPRedirect('/community_list')
                 elif description != '':
                     if not community.set_description(description):
-                        Ke_session.rollback()
+                        cherrypy.request.db.rollback()
                         self.ke_data['errormsg'] = u'la descripción no es válida'
                     else:
                         try:
-                            Ke_session.commit()
+                            cherrypy.request.db.commit()
                             self.ke_data['message'] = u'comunidad modificada correctamente'
                         except:
-                            Ke_session.rollback()
+                            cherrypy.request.db.rollback()
                             self.ke_data['errormsg'] = u'error al guardar las modificaciones en la base de datos'
             self.set_page_description( community.description )
             tmpl = env.get_template('edit_community.html')
@@ -203,7 +245,7 @@ class Main_web(Ke_web):
     def join_community(self, name='', **params):
         self.first_step('community')
         if self.current_user.logged_on:
-            community = self.sc.get_community_by_name(name)
+            community = self.get_community_by_name(name)
             if community:
                 if self.current_user in community.users:
                     community.users.remove(self.current_user)
@@ -211,9 +253,9 @@ class Main_web(Ke_web):
                     community.users.append(self.current_user)
                 community.num_users = len( community.users )
                 try:
-                    Ke_session.commit()
+                    cherrypy.request.db.commit()
                 except:
-                    Ke_session.rollback()
+                    cherrypy.request.db.rollback()
                 raise cherrypy.HTTPRedirect('/community/'+name)
             else:
                 raise cherrypy.HTTPRedirect('/community_list')
@@ -230,7 +272,7 @@ class Main_web(Ke_web):
         if num < 0:
             num = 0
         tmpl = env.get_template('question_list.html')
-        return tmpl.render(question_list=self.sc.get_all_questions(order, num),
+        return tmpl.render(question_list=self.get_all_questions(order, num),
                            order=order,
                            prevp=(num-50),
                            nextp=(num+50),
@@ -240,7 +282,7 @@ class Main_web(Ke_web):
     def question(self, idq='', **params):
         self.first_step('question')
         self.run_onload('load_answers()')
-        question = self.sc.get_question_by_id(idq)
+        question = self.get_question_by_id(idq)
         if question.exists():
             self.set_page_description( question.get_resume() )
             tmpl = env.get_template('question.html')
@@ -251,42 +293,51 @@ class Main_web(Ke_web):
     @cherrypy.expose
     def edit_question(self, idq='', **params):
         self.first_step('edit question')
-        question = self.sc.get_question_by_id(idq)
+        question = self.get_question_by_id(idq)
         if question.exists():
             communities = []
-            for c in question.communities:
-                communities.append(c)
-            for c in self.current_user.communities:
-                if c not in communities:
+            if self.current_user.is_admin():
+                for c in self.get_all_communities():
                     communities.append(c)
+            else:
+                for c in question.communities:
+                    communities.append(c)
+                for c in self.current_user.communities:
+                    if c not in communities:
+                        communities.append(c)
             if self.current_user.id == question.user.id or self.current_user.is_admin():
                 if params.get('remove', '') == str(question.id): # ¿Borramos la pregunta?
-                    Ke_session.delete(question)
-                    self.sc.remove_question( question.id )
+                    cherrypy.request.db.delete(question)
                     try:
-                        Ke_session.commit()
+                        cherrypy.request.db.commit()
                     except:
-                        Ke_session.rollback()
+                        cherrypy.request.db.rollback()
                         self.ke_data['errormsg'] = u'error al borrar la pregunta de la base de datos'
                     if not self.ke_data['errormsg']:
                         raise cherrypy.HTTPRedirect('/question_list')
                 elif params.get('text', '') != '': # ¿Modificamos la pregunta?
                     if not question.set_text( params.get('text', '') ):
-                        Ke_session.rollback()
+                        cherrypy.request.db.rollback()
                         self.ke_data['errormsg'] = u'El texto no es válido'
                     elif not question.set_status( params.get('status', 0) ):
-                        Ke_session.rollback()
+                        cherrypy.request.db.rollback()
                         self.ke_data['errormsg'] = u'Estado no válido'
                     else:
                         del question.communities[:]
+                        s_comm = params.get('communities', [])
                         for c in communities:
-                            if str(c.id) in params.get('communities', []):
-                                question.communities.append(c)
+                            if isinstance(s_comm, unicode):
+                                if str(c.id) == s_comm:
+                                    question.communities.append(c)
+                                    break
+                            else:
+                                if str(c.id) in s_comm:
+                                    question.communities.append(c)
                         try:
-                            Ke_session.commit()
+                            cherrypy.request.db.commit()
                             self.ke_data['message'] = u'pregunta modificada correctamente'
                         except:
-                            Ke_session.rollback()
+                            cherrypy.request.db.rollback()
                             self.ke_data['errormsg'] = u'error al guardar las modificaciones en la base de datos'
             self.set_page_description( question.get_resume() )
             tmpl = env.get_template('edit_question.html')
@@ -326,13 +377,13 @@ class Main_web(Ke_web):
     def user_list(self, **params):
         self.first_step('user_list')
         tmpl = env.get_template('user_list.html')
-        return tmpl.render(user_list=self.sc.get_all_users(),
+        return tmpl.render(user_list=self.get_all_users(),
                            ke_data=self.ke_data)
     
     @cherrypy.expose
     def user(self, nick='', order='updated', num=0, **params):
         self.first_step('user')
-        user = self.sc.get_user_by_nick(nick)
+        user = self.get_user_by_nick(nick)
         if user.exists():
             try:
                 num = int(num)
@@ -340,18 +391,21 @@ class Main_web(Ke_web):
                 num = 0
             if num < 0:
                 num = 0
-            query1 = Ke_session.query(Ke_question).filter_by(user_id=user.id)
-            query2 = Ke_session.query(Ke_question).join((Ke_answer, Ke_question.answers)).filter(Ke_question.answers.any(Ke_answer.user==user))
-            if order == 'updated':
-                questions = query1.union(query2).order_by(Ke_question.updated.desc())[num:num+50]
-            elif order == 'reward':
-                questions = query1.union(query2).order_by(Ke_question.reward.desc())[num:num+50]
-            elif order == 'status':
-                questions = query1.union(query2).order_by(Ke_question.status)[num:num+50]
-            elif order == 'author':
-                questions = query1.union(query2).order_by(Ke_question.user_id)[num:num+50]
-            else:
-                questions = query1.union(query2).order_by(Ke_question.id.desc())[num:num+50]
+            try:
+                query1 = cherrypy.request.db.query(Ke_question).filter_by(user_id=user.id)
+                query2 = cherrypy.request.db.query(Ke_question).join((Ke_answer, Ke_question.answers)).filter(Ke_question.answers.any(Ke_answer.user==user))
+                if order == 'updated':
+                    questions = query1.union(query2).order_by(Ke_question.updated.desc())[num:num+50]
+                elif order == 'reward':
+                    questions = query1.union(query2).order_by(Ke_question.reward.desc())[num:num+50]
+                elif order == 'status':
+                    questions = query1.union(query2).order_by(Ke_question.status)[num:num+50]
+                elif order == 'author':
+                    questions = query1.union(query2).order_by(Ke_question.user_id)[num:num+50]
+                else:
+                    questions = query1.union(query2).order_by(Ke_question.id.desc())[num:num+50]
+            except:
+                questions = []
             tmpl = env.get_template('user.html')
             return tmpl.render(user=user,
                                questions=questions,
@@ -366,21 +420,17 @@ class Main_web(Ke_web):
     def stats(self, **params):
         self.first_step('stats')
         tmpl = env.get_template('stats.html')
-        return tmpl.render(searches=self.sc.get_searches(),
-                           ke_data=self.ke_data)
+        return tmpl.render(searches=self.get_searches(), ke_data=self.ke_data)
     
     @cherrypy.expose
     def chat_room(self, text='', **params):
         self.first_step('chat_room')
         self.run_onload('load_chat_log()')
         if cherrypy.request.method == 'POST':
-            if text != '':
-                self.sc.new_chat_msg(text, self.current_user.nick)
+            self.new_chat_msg(text)
             cherrypy.response.headers['Content-Type'] = 'text/plain'
             tmpl = env.get_template('chat_log.html')
-            return tmpl.render(chat_log=self.sc.get_chat_log(),
-                               chat_users=self.sc.chat_user_alive(self.current_user,
-                                                                  cherrypy.request.remote.ip))
+            return tmpl.render(chat_log=self.chat_log, chat_users=self.chat_user_alive())
         else:
             tmpl = env.get_template('chat_room.html')
             return tmpl.render(ke_data=self.ke_data)
@@ -388,9 +438,9 @@ class Main_web(Ke_web):
     @cherrypy.expose
     def sitemap(self, **params):
         self.first_step('sitemap')
-        communities = self.sc.get_all_communities()
+        communities = self.get_all_communities()
         questions = self.get_front_questions()
-        users = self.sc.get_all_users()
+        users = self.get_all_users()
         document = "Content-Type: text/xml\n\n"
         document += "<?xml version='1.0' encoding='UTF-8'?>\n"
         document += "<urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'>\n"
@@ -404,6 +454,8 @@ class Main_web(Ke_web):
         return document
 
 if __name__ == "__main__":
+    SAEnginePlugin(cherrypy.engine).subscribe()
+    cherrypy.tools.db = SATool()
     if APP_RUN_AS_DAEMON:
         d = Daemonizer(cherrypy.engine)
         d.subscribe()
@@ -411,4 +463,3 @@ if __name__ == "__main__":
         p.subscribe()
         cp_config['global']['log.screen'] = False
     cherrypy.quickstart(Main_web(), config=cp_config)
-    Ke_session.close()

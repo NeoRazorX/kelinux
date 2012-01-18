@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import cherrypy, hashlib, random, re, cgi, smtplib
-from sqlalchemy import create_engine, Table, Column, ForeignKey, BigInteger, Integer, String, Boolean, Text, DateTime
+from sqlalchemy import Table, Column, ForeignKey, BigInteger, Integer, String, Boolean, Text, DateTime
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship, backref
+from sqlalchemy.orm import relationship, backref
 from datetime import datetime, timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -12,14 +12,6 @@ from ke_config import *
 
 # iniciamos la clase declarativa para poder crear clases ya mapeadas
 Base = declarative_base()
-
-# creamos el engine para sqlalchemy
-Ke_engine = create_engine("mysql://%s:%s@%s:%s/%s" % (MYSQL_USER, MYSQL_PASS, MYSQL_HOST, MYSQL_PORT, MYSQL_DBNAME),
-                          encoding='utf-8', convert_unicode=True, echo=APP_DEBUG)
-
-# Iniciamos la sesión con la base de datos
-sql_session = sessionmaker(bind=Ke_engine)
-Ke_session = sql_session()
 
 # clase de usuario ya mapeada con sqlalchemy
 class Ke_user(Base):
@@ -54,13 +46,8 @@ class Ke_user(Base):
     def set_nick(self, n):
         n = n.lower()
         if re.match("^[a-zA-Z0-9_]{4,16}$", n) and n != 'anonymous':
-            if n == self.nick:
-                return True
-            elif not Ke_session.query(Ke_user).filter_by(nick=n).first():
-                self.nick = n
-                return True
-            else:
-                return False
+            self.nick = n
+            return True
         else:
             return False
     
@@ -73,13 +60,8 @@ class Ke_user(Base):
     
     def set_email(self, e):
         if re.match("^[a-zA-Z0-9._%-]+@[a-zA-Z0-9._%-]+.[a-zA-Z]{2,6}$", e):
-            if e == self.email:
-                return True
-            elif not Ke_session.query(Ke_user).filter_by(email=e).first():
-                self.email = e
-                return True
-            else:
-                return False
+            self.email = e
+            return True
         else:
             return False
     
@@ -148,13 +130,8 @@ class Ke_community(Base):
     def set_name(self, n):
         n = n.lower()
         if re.match("^[a-zA-Z0-9_]{3,20}$", n):
-            if n == self.name:
-                return True
-            elif not Ke_session.query(Ke_community).filter_by(name=n).first():
-                self.name = n
-                return True
-            else:
-                return False
+            self.name = n
+            return True
         else:
             return False
     
@@ -321,291 +298,47 @@ class Ke_answer(Base):
             return '/question/'+str(self.question_id)
 
 
-class Super_cache:
-    users = []
-    communities = []
-    questions = []
-    chat_log = []
-    chat_users = []
-    searches = []
-    stats = {
-        'uptime': datetime.now(),
-        'served_pages': 0,
-        'users': 0,
-        'users_m': 0,
-        'communities': 0,
-        'communities_m': 0,
-        'questions': 0,
-        'questions_m': 0,
-        'searches': 0,
-        'chat_users': 0
-    }
-    
-    def get_user_by_id(self, i):
-        try:
-            i = int(i)
-        except:
-            i = -1
-        if i <= 0:
-            user = Ke_user()
-        else:
-            encontrado = False
-            for u in self.users:
-                if u.id == i:
-                    self.give_points2user(u)
-                    user = u
-                    encontrado = True
-                    break
-            if not encontrado:
-                user = Ke_session.query(Ke_user).filter_by(id=i).first()
-                try:
-                    if user.exists():
-                        self.users.append(user)
-                except:
-                    user = Ke_user()
-        return user
-    
-    def get_user_by_email(self, email):
-        encontrado = False
-        for u in self.users:
-            if u.email == email:
-                self.give_points2user(u)
-                user = u
-                encontrado = True
-                break
-        if not encontrado:
-            user = Ke_session.query(Ke_user).filter_by(email=email).first()
-            try:
-                if user.exists():
-                    self.users.append(user)
-            except:
-                user = Ke_user()
-        return user
-    
-    def get_user_by_nick(self, nick):
-        encontrado = False
-        for u in self.users:
-            if u.nick == nick:
-                self.give_points2user(u)
-                user = u
-                encontrado = True
-                break
-        if not encontrado:
-            user = Ke_session.query(Ke_user).filter_by(nick=nick).first()
-            try:
-                if user.exists():
-                    self.users.append(user)
-            except:
-                user = Ke_user()
-        return user
-    
-    def get_all_users(self):
-        return Ke_session.query(Ke_user).order_by(Ke_user.nick).all()
-    
-    def give_points2user(self, u):
-        if u.exists() and u.logged_on and random.randint(0, 99) == 0:
-            u.add_points(+1)
-            try:
-                Ke_session.commit()
-            except:
-                Ke_session.rollback()
-    
-    def get_community_by_id(self, idc):
-        try:
-            idc = int(idc)
-        except:
-            idc = -1
-        encontrado = False
-        for c in self.communities:
-            if c.id == idc:
-                community = c
-                encontrado = True
-                break
-        if not encontrado:
-            community = Ke_session.query(Ke_community).filter_by(id=idc).first()
-            try:
-                if community.exists():
-                    self.communities.append(community)
-            except:
-                community = Ke_community()
-        return community
-    
-    def get_community_by_name(self, n):
-        encontrado = False
-        for c in self.communities:
-            if c.name == n:
-                community = c
-                encontrado = True
-                break
-        if not encontrado:
-            community = Ke_session.query(Ke_community).filter_by(name=n).first()
-            try:
-                if community.exists():
-                    self.communities.append(community)
-            except:
-                community = Ke_community()
-        return community
-    
-    def get_all_communities(self):
-        return Ke_session.query(Ke_community).order_by(Ke_community.name).all()
-    
-    def remove_community(self, idc):
-        removed = False
-        i = 0
-        while i < len(self.communities):
-            if self.communities[i].id == idc:
-                del self.communities[i]
-                removed = True
-                break
-            i += 1
-        return removed
-    
-    def get_question_by_id(self, i):
-        try:
-            i = int(i)
-        except:
-            i = -1
-        if i <= 0:
-            question = Ke_question()
-        else:
-            encontrado = False
-            for q in self.questions:
-                if q.id == i:
-                    self.increase_reward2question(q)
-                    question = q
-                    encontrado = True
-                    break
-            if not encontrado:
-                question = Ke_session.query(Ke_question).filter_by(id=i).first()
-                try:
-                    if question.exists():
-                        self.questions.append(question)
-                except:
-                    question = Ke_question()
-        return question
-    
-    def get_all_questions(self, order='created', num=0):
-        query = Ke_session.query(Ke_question)
-        if order == 'updated':
-            return query.order_by(Ke_question.updated.desc())[num:num+50]
-        elif order == 'reward':
-            return query.order_by(Ke_question.reward.desc())[num:num+50]
-        elif order == 'status':
-            return query.order_by(Ke_question.status)[num:num+50]
-        elif order == 'author':
-            return query.order_by(Ke_question.user_id)[num:num+50]
-        else:
-            return query.order_by(Ke_question.id.desc())[num:num+50]
-    
-    def remove_question(self, idq):
-        removed = False
-        i = 0
-        while i < len(self.questions):
-            if self.questions[i].id == idq:
-                del self.questions[i]
-                removed = True
-                break
-            i += 1
-        return removed
-    
-    def increase_reward2question(self, q):
-        if q.exists() and not q.is_solved() and random.randint(0, 99) == 0:
-            q.add_reward(1)
-            try:
-                Ke_session.commit()
-            except:
-                Ke_session.rollback()
-    
-    def get_chat_log(self):
-        return self.chat_log
-    
-    def new_chat_msg(self, text='', nick='anonymous'):
-        if len(self.chat_log) > 100:
-            del self.chat_log[75:]
-        text = cgi.escape(text.strip(), True)
-        self.chat_log.insert(0, [datetime.now(), nick, text])
-    
-    def chat_user_alive(self, user, ip):
-        encontrado = False
-        i = 0
-        while i < len(self.chat_users):
-            if self.chat_users[i][0] == ip and self.chat_users[i][1].nick == user.nick:
-                encontrado = True
-                self.chat_users[i][2] = datetime.today()
-                break
-            i += 1
-        self.check_chat_users()
-        if not encontrado:
-            self.chat_users.append([ip, user, datetime.today()])
-        return self.chat_users
-    
-    def check_chat_users(self):
-        i = 0
-        while i < len(self.chat_users):
-            if self.chat_users[i][2] < (datetime.today() - timedelta(minutes=2)):
-                del self.chat_users[i]
-            i += 1
-    
-    def new_search(self, query):
-        encontrada = False
-        for s in self.searches:
-            if s[0] == query:
-                s[1] += 1
-                encontrada = True
-                break
-        if not encontrada:
-            self.searches.append([query, 1])
-        return Ke_session.query(Ke_question).filter(Ke_question.text.like('%'+query+'%'))[:20]
-    
-    def get_searches(self):
-        return self.searches
-    
-    def get_stats(self):
-        self.stats['users_m'] = len(self.users)
-        self.stats['communities_m'] = len(self.communities)
-        self.stats['questions_m'] = len(self.questions)
-        self.check_chat_users()
-        self.stats['chat_users'] = len(self.chat_users)
-        return self.stats
-    
-    def get_full_stats(self):
-        if random.randint(0, 9) == 0:
-            self.stats['users'] = Ke_session.query(Ke_user).count()
-            self.stats['users_m'] = len(self.users)
-            self.stats['communities'] = Ke_session.query(Ke_community).count()
-            self.stats['communities_m'] = len(self.communities)
-            self.stats['questions'] = Ke_session.query(Ke_question).count()
-            self.stats['questions_m'] = len(self.questions)
-            self.stats['searches'] = 0
-            for s in self.searches:
-                self.stats['searches'] += s[1]
-        return self.stats
-    
-    def add_served_pages(self):
-        self.stats['served_pages'] += 1
-
-
 class Ke_mail:
-    def send(self, email='', subject='', msg=''):
-        if email != '' and msg != '':
-            server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-            server.ehlo()
+    def __init__(self):
+        if not APP_DEBUG:
+            self.server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+            self.server.ehlo()
             if SMTP_TTLS:
-                server.starttls()
-            server.ehlo()
-            server.login(SMTP_USER, SMTP_PASS)
+                self.server.starttls()
+            self.server.ehlo()
+            self.server.login(SMTP_USER, SMTP_PASS)
+    
+    def send(self, email='', subject='', msg=''):
+        if APP_DEBUG:
+            self.test(email, subject, msg)
+        elif email != '' and msg != '':
             mmsg = MIMEMultipart("alternative")
             mmsg['Subject'] = subject
             mmsg['From'] = APP_ADMIN_EMAIL
             mmsg['To'] = email
             part1 = MIMEText(msg, "plain", "utf-8")
             mmsg.attach(part1)
-            server.sendmail(APP_ADMIN_EMAIL, email, mmsg.as_string().encode('ascii'))
-            server.quit()
+            self.server.sendmail(APP_ADMIN_EMAIL, email, mmsg.as_string().encode('ascii'))
+    
+    def test(self, email='', subject='', msg=''):
+        if email != '' and msg != '':
+            mmsg = MIMEMultipart("alternative")
+            mmsg['Subject'] = subject
+            mmsg['From'] = APP_ADMIN_EMAIL
+            mmsg['To'] = email
+            part1 = MIMEText(msg, "plain", "utf-8")
+            mmsg.attach(part1)
+            print '------------------------------------------------------------------'
+            print email+' - '+subject
+            print msg
+            print '------------------------------------------------------------------'
+    
+    def __del__(self):
+        if not APP_DEBUG:
+            self.server.quit()
 
 
 class Ke_web:
-    sc = Super_cache()
     current_user = Ke_user()
     ke_data = ke_data = {
         'appname': APP_NAME,
@@ -614,22 +347,32 @@ class Ke_web:
         'analyticsid': GOOGLE_ANALYTICS_ID,
         'adsenses': GOOGLE_ADSENSE_SQUARE_HTML,
         'description': APP_NAME,
-        'user': current_user
+        'user': current_user,
+        'stats': {
+            'uptime': datetime.now(),
+            'served_pages': 0,
+            'users': 0,
+            'communities': 0,
+            'questions': 0,
+            'searches': 0,
+            'chat_users': 0
+        }
     }
+    chat_log = []
+    chat_users = []
+    searches = []
     
     def first_step(self, title):
+        # reiniciamos la sesión con la base de datos
         self.ke_data['rpage'] = title
         self.ke_data['description'] = title
         self.ke_data['errormsg'] = False
         self.ke_data['message'] = False
         self.ke_data['runonload'] = False
         self.ke_data['query'] = ''
+        self.ke_data['stats']['served_pages'] += 1
+        self.get_stats()
         self.fast_log_in()
-        self.sc.add_served_pages()
-        if title == 'stats':
-            self.ke_data['stats'] = self.sc.get_full_stats()
-        else:
-            self.ke_data['stats'] = self.sc.get_stats()
     
     def set_current_user(self, user):
         self.current_user = user
@@ -654,27 +397,200 @@ class Ke_web:
         req_cookie[name]['expires'] = expires
         req_cookie[name]['path'] = '/'
     
+    def get_user_by_id(self, i):
+        try:
+            user = cherrypy.request.db.query(Ke_user).filter_by(id=int(i)).first()
+            if user.exists():
+                self.give_points2user(user)
+                return user
+        except:
+            return Ke_user()
+    
+    def get_user_by_email(self, email):
+        try:
+            user = cherrypy.request.db.query(Ke_user).filter_by(email=email).first()
+            if user.exists():
+                self.give_points2user(user)
+                return user
+        except:
+            return Ke_user()
+    
+    def get_user_by_nick(self, nick):
+        try:
+            user = cherrypy.request.db.query(Ke_user).filter_by(nick=nick).first()
+            if user.exists():
+                self.give_points2user(user)
+                return user
+        except:
+            return Ke_user()
+    
+    def get_all_users(self):
+        try:
+            return cherrypy.request.db.query(Ke_user).order_by(Ke_user.nick).all()
+        except:
+            return []
+    
+    def give_points2user(self, u):
+        if u.exists() and random.randint(0, 149) == 0:
+            u.add_points(1)
+            try:
+                cherrypy.request.db.commit()
+            except:
+                cherrypy.request.db.rollback()
+    
+    def get_community_by_id(self, idc):
+        try:
+            community = cherrypy.request.db.query(Ke_community).filter_by(id=int(idc)).first()
+            if community.exists():
+                return community
+        except:
+            return Ke_community()
+    
+    def get_community_by_name(self, n):
+        try:
+            community = cherrypy.request.db.query(Ke_community).filter_by(name=n).first()
+            if community.exists():
+                return community
+        except:
+            return Ke_community()
+    
+    def get_all_communities(self):
+        try:
+            return cherrypy.request.db.query(Ke_community).order_by(Ke_community.name).all()
+        except:
+            return []
+    
+    def get_question_by_id(self, i):
+        try:
+            question = cherrypy.request.db.query(Ke_question).filter_by(id=int(i)).first()
+            if question.exists():
+                self.increase_reward2question(question)
+                return question
+        except:
+            return Ke_question()
+    
+    def get_all_questions(self, order='created', num=0):
+        try:
+            query = cherrypy.request.db.query(Ke_question)
+            if order == 'updated':
+                return query.order_by(Ke_question.updated.desc())[num:num+50]
+            elif order == 'reward':
+                return query.order_by(Ke_question.reward.desc())[num:num+50]
+            elif order == 'status':
+                return query.order_by(Ke_question.status)[num:num+50]
+            elif order == 'author':
+                return query.order_by(Ke_question.user_id)[num:num+50]
+            else:
+                return query.order_by(Ke_question.id.desc())[num:num+50]
+        except:
+            return []
+    
+    def increase_reward2question(self, q):
+        if q.exists() and not q.is_solved() and random.randint(0, 99) == 0:
+            q.add_reward(1)
+            try:
+                cherrypy.request.db.commit()
+            except:
+                cherrypy.request.db.rollback()
+    
+    def new_chat_msg(self, text=''):
+        if len(self.chat_log) > 100:
+            del self.chat_log[75:]
+        else:
+            i = 0
+            while i < len(self.chat_log):
+                if self.chat_log[i][0] < (datetime.today() - timedelta(hours=2)):
+                    del self.chat_log[i]
+                else:
+                    i += 1
+        if text != '':
+            if not self.current_user.exists():
+                ip = cherrypy.request.remote.ip.split('.')
+                try:
+                    nick = '%s %s.%s.X.%s' % (self.current_user.nick, ip[0], ip[1], ip[3])
+                except:
+                    nick = '%s %s' % (self.current_user.nick, cherrypy.request.remote.ip)
+            else:
+                nick = self.current_user.nick
+            self.chat_log.insert(0, [datetime.now(), nick, cgi.escape(text.strip(), True)])
+    
+    def chat_user_alive(self):
+        encontrado = False
+        for c in self.chat_users:
+            if c[0] == cherrypy.request.remote.ip and c[1] == self.current_user.nick:
+                encontrado = True
+                c[3] = datetime.today()
+                break
+        self.check_chat_users()
+        if not encontrado:
+            self.chat_users.append([cherrypy.request.remote.ip,
+                                    self.current_user.nick,
+                                    self.current_user.get_link(),
+                                    datetime.today()])
+        return self.chat_users
+    
+    def check_chat_users(self):
+        i = 0
+        while i < len(self.chat_users):
+            if self.chat_users[i][3] < (datetime.today() - timedelta(minutes=2)):
+                del self.chat_users[i]
+            else:
+                i += 1
+    
+    def new_search(self, query):
+        encontrada = False
+        for s in self.searches:
+            if s[0] == query:
+                s[1] += 1
+                encontrada = True
+                break
+        if not encontrada:
+            self.searches.append([query, 1])
+        try:
+            return cherrypy.request.db.query(Ke_question).filter(Ke_question.text.like('%'+query+'%'))[:20]
+        except:
+            return []
+    
+    def get_searches(self):
+        for s in self.searches:
+            self.ke_data['stats']['searches'] += s[1]
+        return reversed(sorted(self.searches, key=lambda x: x[1]))
+    
+    def get_stats(self):
+        self.check_chat_users()
+        self.ke_data['stats']['chat_users'] = len(self.chat_users)
+        if random.randint(0, 19) == 0:
+            try:
+                self.ke_data['stats']['users'] = cherrypy.request.db.query(Ke_user).count()
+                self.ke_data['stats']['communities'] = cherrypy.request.db.query(Ke_community).count()
+                self.ke_data['stats']['questions'] = cherrypy.request.db.query(Ke_question).count()
+            except:
+                self.ke_data['stats']['users'] = 0
+                self.ke_data['stats']['communities'] = 0
+                self.ke_data['stats']['questions'] = 0
+            self.ke_data['stats']['searches'] = 0
+    
     def do_log_in(self, email='', passwd=''):
         if email == '':
             self.ke_data['errormsg'] = 'introduce el email'
         elif passwd == '':
             self.ke_data['errormsg'] = u'introduce la contraseña'
         else:
-            user = Ke_session.query(Ke_user).filter_by(email=email).first()
-            if not user:
-                self.ke_data['errormsg'] = 'usuario no encontrado'
-            elif user.password == hashlib.sha1(passwd).hexdigest():
-                user.new_log_key()
-                try:
-                    Ke_session.commit()
+            try:
+                user = cherrypy.request.db.query(Ke_user).filter_by(email=email).first()
+                if not user:
+                    self.ke_data['errormsg'] = 'usuario no encontrado'
+                elif user.password == hashlib.sha1(passwd).hexdigest():
+                    user.new_log_key()
+                    cherrypy.request.db.commit()
                     self.set_current_user(user)
                     self.set_cookie('user_id', user.id)
                     self.set_cookie('log_key', user.log_key)
-                except:
-                    Ke_session.rollback()
-                    self.ke_data['errormsg'] = 'error al actualizar la base de datos'
-            else:
-                self.ke_data['errormsg'] = u'contraseña incorrecta'
+                else:
+                    self.ke_data['errormsg'] = u'contraseña incorrecta'
+            except:
+                cherrypy.request.db.rollback()
+                self.ke_data['errormsg'] = 'error al leer la base de datos'
         if not self.ke_data['errormsg']:
             raise cherrypy.HTTPRedirect('/')
     
@@ -683,16 +599,17 @@ class Ke_web:
         user_id = self.get_cookie('user_id')
         log_key = self.get_cookie('log_key')
         if user_id != '' and log_key != '':
-            user2 = self.sc.get_user_by_id(user_id)
+            user2 = self.get_user_by_id(user_id)
             if user2.exists():
                 if user2.log_key == log_key:
                     user = user2
                     user.logged_on = True
                 else:
-                    self.do_log_out()
                     self.ke_data['errormsg'] = u'cookie no válida, debes volver a iniciar sesión'
+                    self.do_log_out()
             else:
                 self.ke_data['errormsg'] = 'tienes la cookie de un usuario que ya no existe'
+                self.do_log_out()
         self.set_current_user(user)
     
     def register(self, email='', nick='', passwd='', passwd2=''):
@@ -704,41 +621,39 @@ class Ke_web:
             self.ke_data['errormsg'] = u'introduce una contraseña'
         elif passwd != passwd2:
             self.ke_data['errormsg'] = u'las contraseñas no coinciden'
+        elif self.get_user_by_email(email).exists():
+            self.ke_data['errormsg'] = 'el email <b>'+email+u'</b> ya está asociado a una cuenta, si ha olvidado la contraseña use el formulario de la izquierda'
+        elif self.get_user_by_nick(nick).exists():
+            self.ke_data['errormsg'] = 'el nick <b>'+nick+u'</b> ya está asignado a un usuario'
         else:
             user = Ke_user()
             if not user.set_email(email):
-                if self.sc.get_user_by_email(email).exists():
-                    self.ke_data['errormsg'] = 'el email <b>'+email+u'</b> ya está asociado a una cuenta, si ha olvidado la contraseña use el formulario de la izquierda'
-                else:
-                    self.ke_data['errormsg'] = u'el email no es válido'
+                self.ke_data['errormsg'] = u'el email no es válido'
             elif not user.set_password(passwd):
                 self.ke_data['errormsg'] = u'la contraseña no es válida (debe contener entre 4 y 20 caracteres alfanuméricos)'
             elif not user.set_nick(nick):
-                if self.sc.get_user_by_nick(nick).exists():
-                    self.ke_data['errormsg'] = 'el nick <b>'+nick+u'</b> ya está asignado a un usuario'
-                else:
-                    self.ke_data['errormsg'] = u'el nombre de usuario no es válido (debe contener entre 4 y 16 caracteres alfanuméricos)'
+                self.ke_data['errormsg'] = u'el nombre de usuario no es válido (debe contener entre 4 y 16 caracteres alfanuméricos)'
             else:
                 try:
                     user.new_log_key()
+                    cherrypy.request.db.add(user)
+                    cherrypy.request.db.commit()
                     self.set_current_user(user)
-                    Ke_session.add(user)
-                    Ke_session.commit()
                     self.set_cookie('user_id', user.id)
                     self.set_cookie('log_key', user.log_key)
                 except:
-                    Ke_session.rollback()
+                    cherrypy.request.db.rollback()
                     self.ke_data['errormsg'] = 'error al guardar el usuario en la base de datos'
         if not self.ke_data['errormsg']:
             raise cherrypy.HTTPRedirect('/')
     
-    def update_user(self, email='', nick='', passwd='', npasswd='', npasswd2=''):
+    def update_user(self, email='', passwd='', npasswd='', npasswd2=''):
         if not self.current_user.logged_on:
             self.ke_data['errormsg'] = u'debes iniciar sesión o crear una cuenta'
         elif email == '':
             self.ke_data['errormsg'] = 'introduce un email'
         elif not self.current_user.set_email(email):
-            Ke_session.rollback()
+            cherrypy.request.db.rollback()
             self.ke_data['errormsg'] = u'el email no es válido o ya existe'
         else:
             if passwd != '':
@@ -751,10 +666,10 @@ class Ke_web:
                 elif not self.current_user.set_password(npasswd):
                     self.ke_data['errormsg'] = u'la contraseña no es válida (debe contener entre 4 y 20 caracteres alfanuméricos)'
             try:
-                Ke_session.commit()
+                cherrypy.request.db.commit()
                 self.ke_data['message'] = 'usuario modificado correctamente'
             except:
-                Ke_session.rollback()
+                cherrypy.request.db.rollback()
                 self.ke_data['errormsg'] = 'error al guardar el usuario en la base de datos'
     
     def do_log_out(self):
@@ -764,7 +679,7 @@ class Ke_web:
     
     def send_mail_new_user_password(self, email=''):
         if email != '':
-            user = self.sc.get_user_by_email(email)
+            user = self.get_user_by_email(email)
             if user.exists():
                 kmail = Ke_mail()
                 kmail.send(user.email, u"Solicitud de cambio de contraseña", u"Hola %s, te enviamos este email porque tienes problemas para entrar en %s. Haz clic en este enlace %s para iniciar sesión, y posteriormente cambiar la contraseña. Bye!" % (user.nick, APP_DOMAIN, 'http://'+APP_DOMAIN+'/new_password/'+str(user.id)+'/'+user.password))
@@ -777,17 +692,17 @@ class Ke_web:
     def new_user_password(self, idu='', passwd=''):
         errormsg = ''
         if idu != '' and passwd != '':
-            user = self.sc.get_user_by_id(idu)
+            user = self.get_user_by_id(idu)
             if user.exists():
                 if user.password == passwd:
                     try:
                         user.new_log_key()
+                        cherrypy.request.db.commit()
                         self.set_current_user(user)
-                        Ke_session.commit()
                         self.set_cookie('user_id', user.id)
                         self.set_cookie('log_key', user.log_key)
                     except:
-                        Ke_session.rollback()
+                        cherrypy.request.db.rollback()
                         errormsg = 'error al guardar el usuario en la base de datos'
                 else:
                     errormsg = 'Datos incorrectos'
@@ -807,23 +722,22 @@ class Ke_web:
             self.ke_data['errormsg'] = u'debes iniciar sesión o crear una cuenta'
         elif self.current_user.points < 1:
             self.ke_data['errormsg'] = 'no tienes suficientes puntos'
+        elif self.get_community_by_name(n).exists():
+            self.ke_data['errormsg'] = 'la comunidad ya existe'
         else:
-            community = self.sc.get_community_by_name(n)
-            if community.exists():
-                self.ke_data['errormsg'] = 'la comunidad ya existe'
+            community = Ke_community()
+            if not community.set_name(n):
+                self.ke_data['errormsg'] = u'introduce un nombre válido (debe contener entre 3 y 20 caracteres alfanuméricos)'
+            elif not community.set_description(d):
+                self.ke_data['errormsg'] = u'introduce una descripción válida'
             else:
-                if not community.set_name(n):
-                    self.ke_data['errormsg'] = u'introduce un nombre válido (debe contener entre 3 y 20 caracteres alfanuméricos)'
-                elif not community.set_description(d):
-                    self.ke_data['errormsg'] = u'introduce una descripción válida'
-                else:
-                    try:
-                        Ke_session.add(community)
-                        self.current_user.add_points(-1)
-                        Ke_session.commit()
-                    except:
-                        Ke_session.rollback()
-                        self.ke_data['errormsg'] = 'error al guardar la comunidad en la base de datos'
+                try:
+                    cherrypy.request.db.add(community)
+                    self.current_user.add_points(-1)
+                    cherrypy.request.db.commit()
+                except:
+                    cherrypy.request.db.rollback()
+                    self.ke_data['errormsg'] = 'error al guardar la comunidad en la base de datos'
         return community
     
     def new_question(self, text=''):
@@ -840,26 +754,26 @@ class Ke_web:
                 for c in self.current_user.communities:
                     question.communities.append(c)
                 try:
-                    Ke_session.add(question)
-                    Ke_session.commit()
+                    cherrypy.request.db.add(question)
+                    cherrypy.request.db.commit()
                 except:
-                    Ke_session.rollback()
+                    cherrypy.request.db.rollback()
                     self.ke_data['errormsg'] = 'error al guardar la pregunta en la base de datos'
         return question
     
     def add_reward2question(self, idq=''):
         if self.current_user.logged_on:
             if self.current_user.points > 0:
-                question = self.sc.get_question_by_id(idq)
+                question = self.get_question_by_id(idq)
                 if question.exists():
                     if not question.is_solved():
                         question.add_reward(1)
                         self.current_user.add_points(-1)
                         try:
-                            Ke_session.commit()
+                            cherrypy.request.db.commit()
                             return 'OK;'+str(question.reward)+';'+str(self.current_user.points)
                         except:
-                            Ke_session.rollback()
+                            cherrypy.request.db.rollback()
                             return u'Error al procesar la petición'
                     else:
                         return u'No puedes añadir recompensa a un pregunta solucionada'
@@ -873,18 +787,21 @@ class Ke_web:
     def get_front_questions(self):
         finalmix = []
         mixto = []
-        # últimas actualizaciones
-        for q in Ke_session.query(Ke_question).order_by(Ke_question.updated.desc())[0:10]:
-            mixto.append(q)
-        # preguntas con mayor recompensa
-        for q in Ke_session.query(Ke_question).order_by(Ke_question.reward.desc())[0:10]:
-            if q not in mixto:
+        try:
+            # últimas actualizaciones
+            for q in cherrypy.request.db.query(Ke_question).order_by(Ke_question.updated.desc())[0:10]:
                 mixto.append(q)
-        # preguntas del usuario
-        if self.current_user.logged_on:
-            for q in self.current_user.questions[-5:]:
-                if q.updated > (datetime.today() - timedelta(days=7)) and q not in mixto:
+            # preguntas con mayor recompensa
+            for q in cherrypy.request.db.query(Ke_question).order_by(Ke_question.reward.desc())[0:10]:
+                if q not in mixto:
                     mixto.append(q)
+            # preguntas del usuario
+            if self.current_user.logged_on:
+                for q in self.current_user.questions[-5:]:
+                    if q.updated > (datetime.today() - timedelta(days=7)) and q not in mixto:
+                        mixto.append(q)
+        except:
+            pass
         # ordenamos por fecha pero dejando las preguntas solucionadas al final
         while len(mixto) > 0:
             seleccion = mixto[0]
@@ -899,7 +816,10 @@ class Ke_web:
     
     def get_answers(self, idq, order='grade'):
         answers = []
-        aux = Ke_session.query(Ke_answer).filter_by(question_id=idq).order_by(Ke_answer.created).all()
+        try:
+            aux = cherrypy.request.db.query(Ke_answer).filter_by(question_id=idq).order_by(Ke_answer.created).all()
+        except:
+            aux = False
         if aux:
             # numeramos
             mgrade = 0
@@ -955,7 +875,7 @@ class Ke_web:
         return answers
     
     def new_answer(self, idq='', text=''):
-        question = self.sc.get_question_by_id(idq)
+        question = self.get_question_by_id(idq)
         answer = Ke_answer()
         if question.exists():
             if text != '':
@@ -968,11 +888,11 @@ class Ke_web:
                         if question.status == 0:
                             question.set_status(1)
                         try:
-                            Ke_session.add(answer)
-                            Ke_session.commit()
+                            cherrypy.request.db.add(answer)
+                            cherrypy.request.db.commit()
                             self.ke_data['message'] = u'respuesta guardada correctamente <a href="#'+str(len(question.answers))+'">@'+str(len(question.answers))+'</a>'
                         except:
-                            Ke_session.rollback()
+                            cherrypy.request.db.rollback()
                             self.ke_data['errormsg'] = u'error al guardar la respuesta en la base de datos'
                     else:
                         self.ke_data['errormsg'] = u'introduce texto válido'
@@ -984,7 +904,10 @@ class Ke_web:
     
     def new_vote2answer(self, ida='', points=1):
         message = ''
-        answer = Ke_session.query(Ke_answer).filter_by(id=ida).first()
+        try:
+            answer = cherrypy.request.db.query(Ke_answer).filter_by(id=ida).first()
+        except:
+            answer = False
         if answer:
             if self.current_user.exists() and self.current_user.logged_on:
                 if self.current_user.points > 0:
@@ -1002,9 +925,9 @@ class Ke_web:
                             self.current_user.add_points(1)
                             message = u'voto incorrecto'
                         try:
-                            Ke_session.commit()
+                            cherrypy.request.db.commit()
                         except:
-                            Ke_session.rollback()
+                            cherrypy.request.db.rollback()
                             message = u'Error al guardar los datos en la base de datos'
                     else:
                         message = u'¿Pretendes votarte a ti mismo?'
@@ -1018,7 +941,10 @@ class Ke_web:
     
     def mark_answer_as_solution(self, ida=''):
         message = ''
-        answer = Ke_session.query(Ke_answer).filter_by(id=ida).first()
+        try:
+            answer = cherrypy.request.db.query(Ke_answer).filter_by(id=ida).first()
+        except:
+            answer = False
         if answer:
             if self.current_user.exists() and self.current_user.logged_on:
                 if self.current_user == answer.user or self.current_user.is_admin():
@@ -1030,10 +956,10 @@ class Ke_web:
                         answer.question.updated = datetime.today()
                         self.current_user.add_points(5)
                         try:
-                            Ke_session.commit()
+                            cherrypy.request.db.commit()
                             message = u'OK'
                         except:
-                            Ke_session.rollback()
+                            cherrypy.request.db.rollback()
                             message = u'Error al guardar los datos en la base de datos'
                     else:
                         message = u'La pregunta ya está marcada como solucionada'

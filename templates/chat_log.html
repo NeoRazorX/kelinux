@@ -2,13 +2,13 @@
 <tr>
     <td>
     <div class="rounded">
-        <div class="message">Mensajes en orden inverso. No reveles nunca tus contraseñas.</div>
+        <h2>Mensajes en orden inverso. No reveles nunca tus contraseñas.</h2>
         {% for c in chat_log %}
-        <div class="chat_msg">
+        <div class="{{ loop.cycle('chat_msg', 'chat_msg2') }}">
             <span class="nick">{{ c[1] }}</span>
             <span class="date">{{ c[0]|timesince }}</span>
             <br/>
-            {{ c[2] }}
+            {{ c[2]|urlize }}
         </div>
         {% endfor %}
     </div>
@@ -18,7 +18,11 @@
         <h2>Usuarios:</h2>
         <div class="d_list">
         {% for u in chat_users %}
-            <div class="element_c" onclick="jump2url('{{ u[1].get_link() }}')">{{ u[1].nick }}</div>
+            {% if u[1] != 'anonymous' %}
+            <div class="element_c" onclick="jump2url('{{ u[2] }}')">{{ u[1] }}</div>
+            {% else %}
+            <div class="element">{{ u[1] }} {{ u[0]|partial_ip }}</div>
+            {% endif %}
         {% endfor %}
         </div>
     </div>

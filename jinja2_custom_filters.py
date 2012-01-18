@@ -56,3 +56,10 @@ def highlight_order(name, order=''):
     else:
         return ''
 
+def partial_ip(value=''):
+    try:
+        ip = value.split('.')
+        return '%s.%s.X.%s' % (ip[0], ip[1], ip[3])
+    except:
+        return value
+

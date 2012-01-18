@@ -1,5 +1,10 @@
 {% include "header.html" %}
 
+<div class="message">
+    Estamos en pleno proceso de migración desde <b>Ubuntu FAQ</b> y por tanto puede haber algunos problemas. Envía cualquier duda o queja
+    a <a href="mailto:kelinux.net@gmail.com">este email</a>. Disculpa las molestias.
+</div>
+
 {% if ke_data.user.logged_on %}
     <div class="rounded">
         <h2>Hola {{ ke_data.user.nick }}!</h2>
@@ -53,10 +58,10 @@
         <div class="question_box">
             <div class="reward">{{ q.reward }}</div>
             <div class="question" onclick="jump2url('{{ q.get_link() }}')">
-                <span class="nick">{{ q.user.nick }}</span>
-                <span class="date">{{ q.updated|timesince }}</span>
-                <span class="tag">{{ q.num_answers }} respuestas</span>
                 <span class="tag">{{ q.get_status() }}</span>
+                <span class="nick">{{ q.user.nick }}</span>
+                <span class="num_answers">{{ q.num_answers }}</span>
+                <span class="date">{{ q.updated|timesince }}</span>
                 <div class="resume">{{ q.get_resume() }}</div>
             </div>
         </div>
