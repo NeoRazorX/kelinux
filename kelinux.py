@@ -441,8 +441,7 @@ class Main_web(Ke_web):
         communities = self.get_all_communities()
         questions = self.get_front_questions()
         users = self.get_all_users()
-        document = "Content-Type: text/xml\n\n"
-        document += "<?xml version='1.0' encoding='UTF-8'?>\n"
+        document = "<?xml version='1.0' encoding='UTF-8'?>\n"
         document += "<urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'>\n"
         for c in communities:
             document += "<url><loc>" + c.get_link() + "</loc><lastmod>" + str(c.created).split(' ')[0] + "</lastmod><changefreq>always</changefreq><priority>0.8</priority></url>\n"
@@ -451,6 +450,7 @@ class Main_web(Ke_web):
         for u in users:
             document += "<url><loc>" + u.get_link() + "</loc><lastmod>" + str(u.created).split(' ')[0] + "</lastmod><changefreq>always</changefreq><priority>0.8</priority></url>\n"
         document += "</urlset>\n"
+        cherrypy.response.headers['Content-Type']='text/xml; charset=utf-8'
         return document
 
 if __name__ == "__main__":
