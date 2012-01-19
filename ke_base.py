@@ -342,7 +342,7 @@ class Ke_web:
     current_user = Ke_user()
     ke_data = ke_data = {
         'appname': APP_NAME,
-        'APP_DOMAIN': APP_DOMAIN,
+        'appdomain': APP_DOMAIN,
         'appadminemail': APP_ADMIN_EMAIL,
         'analyticsid': GOOGLE_ANALYTICS_ID,
         'adsenses': GOOGLE_ADSENSE_SQUARE_HTML,
