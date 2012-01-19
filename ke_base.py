@@ -90,7 +90,7 @@ class Ke_user(Base):
     
     def get_link(self, full=False):
         if full:
-            return APPDOMAIN+'/user/'+self.nick
+            return 'http://'+APP_DOMAIN+'/user/'+self.nick
         else:
             return '/user/'+self.nick
 
@@ -144,7 +144,7 @@ class Ke_community(Base):
     
     def get_link(self, full=False):
         if full:
-            return APPDOMAIN+'/community/'+self.name
+            return 'http://'+APP_DOMAIN+'/community/'+self.name
         else:
             return '/community/'+self.name
 
@@ -251,7 +251,7 @@ class Ke_question(Base):
     
     def get_link(self, full=False):
         if full:
-            return APPDOMAIN+'/question/'+str(self.id)
+            return 'http://'+APP_DOMAIN+'/question/'+str(self.id)
         else:
             return '/question/'+str(self.id)
 
@@ -293,7 +293,7 @@ class Ke_answer(Base):
     
     def get_link(self, full=False):
         if full:
-            return APPDOMAIN+'/question/'+str(self.question_id)
+            return 'http://'+APP_DOMAIN+'/question/'+str(self.question_id)
         else:
             return '/question/'+str(self.question_id)
 
@@ -342,7 +342,7 @@ class Ke_web:
     current_user = Ke_user()
     ke_data = ke_data = {
         'appname': APP_NAME,
-        'appdomain': APP_DOMAIN,
+        'APP_DOMAIN': APP_DOMAIN,
         'appadminemail': APP_ADMIN_EMAIL,
         'analyticsid': GOOGLE_ANALYTICS_ID,
         'adsenses': GOOGLE_ADSENSE_SQUARE_HTML,
