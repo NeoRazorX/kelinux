@@ -187,12 +187,8 @@ div#left_menu ul li span {
 }
 
 div#main_div {
-    position: fixed;
-    top: 45px;
-    left: 155px;
-    right: 0px;
-    bottom: 0px;
-    overflow: auto;
+    margin-top: 45px;
+    margin-left: 155px;
     padding: 5px;
 }
 
@@ -288,7 +284,7 @@ div.d_right {
 }
 
 div.d_list div.element, div.d_list div.element_c {
-    width: 150px;
+    width: 180px;
     padding-top: 3px;
     padding-bottom: 3px;
     display: inline-block;

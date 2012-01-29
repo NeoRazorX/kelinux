@@ -17,7 +17,7 @@
     <tr>
         <td class="minus_grade" onclick="vote_answer('{{ a.id }}', false)" title="votar negativamente">-</td>
     </tr>
-    {% if ke_data.user.id == question.user.id or ke_data.user.is_admin() %}
+    {% if not question.is_solved() and (ke_data.user.id == question.user.id or ke_data.user.is_admin()) %}
     <tr>
         <td colspan="2" class="mark_solution" onclick="mark_solution('{{ a.id }}')" title="marcar como solución válida">es la solución</td>
     </tr>

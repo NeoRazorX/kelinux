@@ -1,6 +1,6 @@
 {% include "header.html" %}
 
-<div id="new_password_msg"></div>
+<div id="forgotten_password_msg"></div>
 
 {% if not ke_data.user.logged_on %}
 <table width="100%">
@@ -20,7 +20,7 @@
             <td><input type="password" name="passwd" size="20" maxlength="20"/></td>
         </tr>
         <tr>
-            <td colspan="2"><div class="d_right"><a href="#" onclick="send_me_a_new_password()">He olvidado la contraseña</a> <input type="submit" value="entrar"/></div></td>
+            <td colspan="2"><div class="d_right"><a href="#" onclick="forgotten_password()">He olvidado la contraseña</a> <input type="submit" value="entrar"/></div></td>
         </tr>
     </table>
     </form>
@@ -54,11 +54,6 @@
 </tr>
 </table>
 {% else %}
-<div class="rounded">
-    <h2>Hola {{ ke_data.user.nick }}!</h2>
-    ¿Deseas ver tu <b>perfil</b>? haz clic <a href="{{ ke_data.user.get_link() }}">aquí</a>.
-</div>
-
 <table width="100%">
 <tr>
 <td valign="top">
@@ -76,6 +71,7 @@
     <tr>
         <td align="right">Contraseña:</td>
         <td><input type="password" name="passwd" size="20" maxlength="20"/></td>
+        <td colspan="2"><a href="/new_password">nueva contraseña</a></td>
     </tr>
     <tr>
         <td align="right">Nueva contraseña:</td>
@@ -102,6 +98,11 @@
 </td>
 </tr>
 </table>
+
+<div class="rounded">
+    <h2>Hola {{ ke_data.user.nick }}!</h2>
+    ¿Deseas ver tu <b>perfil</b>? haz clic <a href="{{ ke_data.user.get_link() }}">aquí</a>.
+</div>
 {% endif %}
 
 {% include "footer.html" %}

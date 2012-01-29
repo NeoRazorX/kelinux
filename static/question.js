@@ -2,7 +2,7 @@ var req_reward = false;
 var req_question = false;
 var req_vote_answer = false;
 var v_reload;
-var answer_order = 'grade';
+var answer_order = 'normal';
 
 function add_reward(idq)
 {

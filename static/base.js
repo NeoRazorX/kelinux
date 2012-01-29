@@ -119,24 +119,24 @@ function jump2url(url)
         window.location.href = url;
 }
 
-var req_new_password;
+var req_forgotten_password;
 
-function send_me_a_new_password()
+function forgotten_password()
 {
     email = prompt('Introduce el email que usaste para registrarte:');
     
     if(window.XMLHttpRequest)
-        req_new_password = new XMLHttpRequest();
+        req_forgotten_password = new XMLHttpRequest();
     else
-        req_new_password = new ActiveXObject("Microsoft.XMLHTTP");
+        req_forgotten_password = new ActiveXObject("Microsoft.XMLHTTP");
     
-    if(req_new_password)
+    if(req_forgotten_password)
     {
-        req_new_password.onreadystatechange = process_new_password;
-        req_new_password.open("POST", "/new_password", true);
+        req_forgotten_password.onreadystatechange = process_forgotten_password;
+        req_forgotten_password.open("POST", "/forgotten_password", true);
         var formData = new FormData();
         formData.append("email", email);
-        req_new_password.send(formData);
+        req_forgotten_password.send(formData);
     }
     else
     {
@@ -144,12 +144,12 @@ function send_me_a_new_password()
     }
 }
 
-function process_new_password()
+function process_forgotten_password()
 {
-    var npmsg = document.getElementById('new_password_msg');
-    if(req_new_password.readyState == 4)
+    var npmsg = document.getElementById('forgotten_password_msg');
+    if(req_forgotten_password.readyState == 4)
     {
-        npmsg.innerHTML = req_new_password.responseText;
+        npmsg.innerHTML = req_forgotten_password.responseText;
     }
     else
     {

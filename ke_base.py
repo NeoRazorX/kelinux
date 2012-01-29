@@ -499,7 +499,7 @@ class Ke_web:
         else:
             i = 0
             while i < len(self.chat_log):
-                if self.chat_log[i][0] < (datetime.today() - timedelta(hours=2)):
+                if self.chat_log[i][0] < (datetime.today() - timedelta(hours=3)):
                     del self.chat_log[i]
                 else:
                     i += 1
@@ -538,17 +538,21 @@ class Ke_web:
                 i += 1
     
     def new_search(self, query):
-        encontrada = False
-        for s in self.searches:
-            if s[0] == query:
-                s[1] += 1
-                encontrada = True
-                break
-        if not encontrada:
-            self.searches.append([query, 1])
-        try:
-            return cherrypy.request.db.query(Ke_question).filter(Ke_question.text.like('%'+query+'%'))[:20]
-        except:
+        query = query.strip()
+        if query != '':
+            encontrada = False
+            for s in self.searches:
+                if s[0] == query:
+                    s[1] += 1
+                    encontrada = True
+                    break
+            if not encontrada:
+                self.searches.append([query, 1])
+            try:
+                return cherrypy.request.db.query(Ke_question).filter(Ke_question.text.like('%'+query+'%'))[:20]
+            except:
+                return []
+        else:
             return []
     
     def get_searches(self):
@@ -677,19 +681,19 @@ class Ke_web:
         self.set_cookie('log_key', '', 0)
         self.set_current_user( Ke_user() )
     
-    def send_mail_new_user_password(self, email=''):
+    def forgotten_password_email(self, email=''):
         if email != '':
             user = self.get_user_by_email(email)
             if user.exists():
                 kmail = Ke_mail()
-                kmail.send(user.email, u"Solicitud de cambio de contraseña", u"Hola %s, te enviamos este email porque tienes problemas para entrar en %s. Haz clic en este enlace %s para iniciar sesión, y posteriormente cambiar la contraseña. Bye!" % (user.nick, APP_DOMAIN, 'http://'+APP_DOMAIN+'/new_password/'+str(user.id)+'/'+user.password))
+                kmail.send(user.email, u"Contraseña olvidada", u"Hola %s, te enviamos este email porque tienes problemas para entrar en %s. Haz clic en este enlace %s para iniciar sesión, y posteriormente cambiar la contraseña. Bye!" % (user.nick, APP_DOMAIN, 'http://'+APP_DOMAIN+'/forgotten_password/'+str(user.id)+'/'+user.password))
                 return u"<div class='message'>se ha enviado un email con las instrucciones</div>"
             else:
                 return u"<div class='error'>el email que has proporcionado no está en nuestra base de datos</div>"
         else:
             return u"<div class='error'>no has introducido ningún email</div>"
     
-    def new_user_password(self, idu='', passwd=''):
+    def forgotten_password_log_in(self, idu='', passwd=''):
         errormsg = ''
         if idu != '' and passwd != '':
             user = self.get_user_by_id(idu)
@@ -814,7 +818,7 @@ class Ke_web:
             finalmix.append(seleccion)
         return finalmix
     
-    def get_answers(self, idq, order='grade'):
+    def get_answers(self, idq, order='normal'):
         answers = []
         try:
             aux = cherrypy.request.db.query(Ke_answer).filter_by(question_id=idq).order_by(Ke_answer.created).all()
@@ -829,9 +833,6 @@ class Ke_web:
                 if aux[i].grade > 0:
                     mgrade = aux[i].grade
                 i += 1
-            # si no hay ninguna respuesta con nota, no hace falta ordenar por nota
-            if mgrade == 0:
-                order = 'normal'
             if order == 'grade':
                 # ordenamos teniendo en cuenta las meciones.
                 while len(aux) > 0:

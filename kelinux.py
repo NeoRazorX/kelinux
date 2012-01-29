@@ -129,13 +129,33 @@ class Main_web(Ke_web):
         return tmpl.render(ke_data=self.ke_data)
     
     @cherrypy.expose
-    def new_password(self, email='', passwd='', **params):
-        self.first_step('new_password')
+    def new_password(self, **params):
+        self.first_step('log_in')
+        if self.current_user.logged_on:
+            npassword = str(random.randint(0, 999999))
+            self.current_user.set_password(npassword)
+            try:
+                cherrypy.request.db.commit()
+                kmail = Ke_mail()
+                kmail.send(self.current_user.email, u"Nueva contraseña", u"Hola %s, '%s' es tu nueva contraseña para %s. Bye!"
+                                                     % (self.current_user.nick, npassword, APP_DOMAIN))
+                self.ke_data['message'] = u'te hemos enviado un email con la nueva contraseña!'
+            except:
+                cherrypy.request.db.rollback()
+                self.ke_data['errormsg'] = u'error al actualizar la base de datos!'
+        else:
+            self.ke_data['errormsg'] = u'tienes que iniciar sesión!'
+        tmpl = env.get_template('log_in.html')
+        return tmpl.render(ke_data=self.ke_data)
+    
+    @cherrypy.expose
+    def forgotten_password(self, email='', passwd='', **params):
+        self.first_step('log_in')
         errormsg = ''
         if cherrypy.request.method == 'POST':
-            errormsg = self.send_mail_new_user_password(email)
+            errormsg = self.forgotten_password_email(email)
         else:
-            errormsg = self.new_user_password(email, passwd)
+            errormsg = self.forgotten_password_log_in(email, passwd)
         if errormsg == '':
             raise cherrypy.HTTPRedirect('/')
         else:
@@ -354,7 +374,7 @@ class Main_web(Ke_web):
         return self.add_reward2question(idq)
     
     @cherrypy.expose
-    def answers(self, idq='', order='grade', text='', **params):
+    def answers(self, idq='', order='normal', text='', **params):
         self.first_step('question')
         question,answer = self.new_answer(idq, text)
         answers = self.get_answers(idq, order)

@@ -17,7 +17,7 @@
 <h2>Búsquedas: {{ ke_data.stats.searches }}</h2>
 <ul>
 {% for s in searches %}
-    <li>{{ s[0] }} ({{ s[1] }})</li>
+    <li><a href="/finder/{{ s[0] }}">{{ s[0] }}</a> ({{ s[1] }})</li>
 {% endfor %}
 </ul>
 </div>
