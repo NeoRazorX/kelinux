@@ -806,13 +806,11 @@ class Ke_web:
                         mixto.append(q)
         except:
             pass
-        # ordenamos por fecha pero dejando las preguntas solucionadas al final
+        # ordenamos por fecha
         while len(mixto) > 0:
             seleccion = mixto[0]
             for m in mixto:
-                if seleccion.is_solved():
-                    seleccion = m
-                elif m.updated > seleccion.updated:
+                if m.updated > seleccion.updated:
                     seleccion = m
             mixto.remove(seleccion)
             finalmix.append(seleccion)
