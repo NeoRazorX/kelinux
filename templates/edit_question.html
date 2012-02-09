@@ -1,6 +1,16 @@
 {% include "header.html" %}
 
-<script type="text/javascript" src="/static/question.js"></script>
+<script type="text/javascript">
+    $(document).ready(function() {
+        $("#remove_question").click(function() {
+            if( confirm('Estas completamente seguro de querer eliminar esta pregunta?') )
+            {
+                document.f_edit_question.remove.value = '{{ question.id }}';
+                document.f_edit_question.submit();
+            }
+        });
+    });
+</script>
 
 <div class="rounded">
     <h2>
@@ -37,7 +47,7 @@
             {% if ke_data.user.is_admin() %}
                 <td>
                     <input type="hidden" name="remove"/>
-                    <input type="button" value="borrar" onclick="remove_question('{{ question.id }}')"/>
+                    <input type="button" value="borrar" id="remove_question"/>
                 </td>
             {% endif %}
             <td align="center">

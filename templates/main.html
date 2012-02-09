@@ -1,25 +1,23 @@
 {% include "header.html" %}
 
-<div class="message">
-    {{ ke_data.appname }} está en pleno desarrollo y por tanto puede haber algunos problemas. Envía cualquier duda,
-    queja o sugerencia a <a href="mailto:kelinux.net@gmail.com">este email</a>. Disculpa las molestias.
-</div>
-
 {% if ke_data.user.logged_on %}
     <div class="rounded">
         <h2>Hola {{ ke_data.user.nick }}!</h2>
         Tienes <b>{{ ke_data.user.points }}</b> puntos. Los puntos son necesarios para <b>votar las respuestas</b>, y sobre todo,
         para <b>añadirlos</b> a la <b>recompensa de cada pregunta</b>.<br/>
         Las preguntas con una recompensa más alta son más visibles, y el usuario que las resuelve obtiene esa recompensa en puntos.
+        {{ ke_data.mainmsg }}
     </div>
     
     <div class="rounded">
-        <h2>Eres miembro de:</h2>
+        <h2>
+            Eres miembro de:
+            <span><a class="link" href="/community_list">ver todas las comunidades</a></span>
+        </h2>
         <div class="d_list">
             {% for c in ke_data.user.communities %}
                 <div class="element_c" onclick="jump2url('{{ c.get_link() }}')">{{ c.name }} ({{ c.num_users }})</div>
             {% endfor %}
-            <div class="element_c" onclick="jump2url('/community_list')"><b>añadir</b></div>
         </div>
     </div>
 {% else %}
@@ -32,6 +30,7 @@
         nuestro software las clasifica, las muestra a los demás usuarios, especialmente a los que más pueden ayudar sobre ese tema,
         y así <b>entre todos</b> las podremos <b>solucionar</b>. Además verás en todo momento los cambios y <b>te notificaremos</b>
         cualquier respuesta.
+        {{ ke_data.mainmsg }}
     </div>
     
     <div class="rounded">
@@ -40,7 +39,6 @@
             {% for c in community_list %}
                 <div class="element_c" onclick="jump2url('{{ c.get_link() }}')">{{ c.name }} ({{ c.num_users }})</div>
             {% endfor %}
-            <div class="element_c" onclick="jump2url('/community_list')"><b>añadir</b></div>
         </div>
     </div>
 {% endif %}

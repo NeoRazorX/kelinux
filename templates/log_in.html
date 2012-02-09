@@ -20,7 +20,26 @@
             <td><input type="password" name="passwd" size="20" maxlength="20"/></td>
         </tr>
         <tr>
-            <td colspan="2"><div class="d_right"><a href="#" onclick="forgotten_password()">He olvidado la contraseña</a> <input type="submit" value="entrar"/></div></td>
+            <td colspan="2">
+                <script type="text/javascript">
+                    $(document).ready(function() {
+                        $("#forgotten_password").click(function(event) {
+                            event.preventDefault();
+                            var email = prompt('Introduce el email que usaste para registrarte:');
+                            $.ajax({
+                                type: 'POST',
+                                url: '/forgotten_password',
+                                dataType: 'html',
+                                data: 'email='+email,
+                                success: function(datos) {
+                                    $("#forgotten_password_msg").html(datos);
+                                }
+                            });
+                        });
+                    });
+                </script>
+                <div class="d_right"><a href="#" id="forgotten_password">He olvidado la contraseña</a> <input type="submit" value="entrar"/></div>
+            </td>
         </tr>
     </table>
     </form>
@@ -80,7 +99,13 @@
         <td><input type="password" name="npasswd2" size="20" maxlength="20"/></td>
     </tr>
     <tr>
-        <td colspan="4"><div class="d_right"><input type="submit" value="modificar"/></div></td>
+        <td align="right">No recibir emails:</td>
+        {% if ke_data.user.no_emails %}
+            <td><input type="checkbox" name="noemails" value="True" checked="checked"/></td>
+        {% else %}
+            <td><input type="checkbox" name="noemails" value="True"/></td>
+        {% endif %}
+        <td colspan="2"><div class="d_right"><input type="submit" value="modificar"/></div></td>
     </tr>
     </table>
     </form>
@@ -100,8 +125,16 @@
 </table>
 
 <div class="rounded">
-    <h2>Hola {{ ke_data.user.nick }}!</h2>
-    ¿Deseas ver tu <b>perfil</b>? haz clic <a href="{{ ke_data.user.get_link() }}">aquí</a>.
+    <h2>
+        Hola {{ ke_data.user.nick }}!
+        <span><a class="link" href="{{ ke_data.user.get_link() }}">ver mi perfil</a></span>
+    </h2>
+    {% for n in notifications %}
+    <div class="{{ loop.cycle('chat_msg', 'chat_msg2') }}">
+        {{ n.text|linebreaks }} - <a href="{{ n.link }}">leer...</a>.
+        <span class="date">{{ n.date|timesince }}</span>
+    </div>
+    {% endfor %}
 </div>
 {% endif %}
 

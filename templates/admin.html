@@ -1,0 +1,11 @@
+{% include "header.html" %}
+
+<div class="rounded">
+    <h2>Mensaje de portada:</h2>
+    <form action="/admin" method="post">
+        <textarea name='text' rows="8">{{ ke_data.mainmsg }}</textarea>
+        <div class="d_right"><input type="submit" value="guardar"/></div>
+    </form>
+</div>
+
+{% include "footer.html" %}

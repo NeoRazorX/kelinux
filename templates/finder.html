@@ -1,5 +1,11 @@
 {% include "header.html" %}
 
+<script type="text/javascript">
+    $(document).ready(function() {
+        document.f_finder.query.focus();
+    });
+</script>
+
 <div id="finder_ressults">
     <div class="rounded">
         <h2>resultados de la búsqueda "{{ ke_data.query }}":</h2>

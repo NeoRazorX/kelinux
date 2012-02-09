@@ -1,8 +1,40 @@
 {% include "header.html" %}
 
-<script type="text/javascript" src="/static/chat.js"></script>
+<script type="text/javascript" src="/static/jquery.js"></script>          
+<script type="text/javascript">
+    var load_timeout;
+    function load_chat_log() {
+        $.ajax({
+            type: 'POST',
+            url: '/chat_room',
+            dataType: 'html',
+            success: function(datos) {
+                $("#chat_log").html(datos);
+                load_timeout = setTimeout('load_chat_log()', 15000);
+            }
+        });
+    }
+    $(document).ready(function() {
+        $("#i_chat_text").focus();
+        load_chat_log();
+        
+        $("#chat_form").submit(function(event) {
+            event.preventDefault();
+            $.ajax({
+                type: 'POST',
+                url: '/chat_room',
+                dataType: 'html',
+                data: 'text='+$("#i_chat_text").val(),
+                success: function(datos) {
+                    $("#chat_log").html(datos);
+                    $("#i_chat_text").val('');
+                }
+            });
+        });
+    });
+</script>
 
-<form name="chat_form" onsubmit="send_chat_msg(); return false">
+<form name="chat_form" id="chat_form">
 <table id="chat_form_table">
 <tr>
     <td><input id="i_chat_text" type="text" name="text" maxlength="200"/></td>

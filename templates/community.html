@@ -1,8 +1,17 @@
 {% include "header.html" %}
 
-<script type="text/javascript" src="/static/community.js"></script>
+<script type="text/javascript">
+    $(document).ready(function() {
+        $("#edit_community").click(function() {
+            window.location.href = '/edit_community/{{ community.id }}';
+        });
+    });
+</script>
 
-<div class="rounded">
+<table width="100%">
+<tr>
+    <td valign="top">
+    <div class="rounded">
     <h2>
         {{ community.name }}
         <span>{{ community.created }}</span>
@@ -22,17 +31,13 @@
         </td>
         <td align="right">
         {% if ke_data.user.is_admin() %}
-            <input type="button" value="editar" onclick="edit_community('{{ community.id }}')"/>
+            <input type="button" value="editar" id="edit_community"/>
         {% endif %}
         </td>
     </tr>
     </table>
     </form>
-</div>
-
-<table width="100%">
-<tr>
-    <td valign="top">
+    </div>
     <div class="rounded">
         <h2>
             Lista de preguntas:

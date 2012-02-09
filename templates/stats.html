@@ -1,25 +1,24 @@
 {% include "header.html" %}
 
 <div class="rounded">
-<h2>Estadísticas</h2>
-<div class="d_list">
-    <div class="element">Uptime: {{ ke_data.stats.uptime|timesince(False) }}</div>
-    <div class="element">Páginas servidas: {{ ke_data.stats.served_pages }}</div>
-    <div class="element">Usuarios: {{ ke_data.stats.users }}</div>
-    <div class="element">Comunidades: {{ ke_data.stats.communities }}</div>
-    <div class="element">Preguntas: {{ ke_data.stats.questions }}</div>
+    <h2>Estadísticas</h2>
+    <div class="d_list">
+        <div class="element">Uptime: {{ ke_data.stats.uptime|timesince(False) }}</div>
+        <div class="element">Páginas servidas: {{ ke_data.stats.served_pages }}</div>
+        <div class="element">Usuarios: {{ ke_data.stats.users }}</div>
+        <div class="element">Notificaciones: {{ ke_data.stats.notifications }}</div>
+        <div class="element">Comunidades: {{ ke_data.stats.communities }}</div>
+        <div class="element">Preguntas: {{ ke_data.stats.questions }}</div>
+    </div>
 </div>
-</div>
-
-<br/>
 
 <div class="rounded">
-<h2>Búsquedas: {{ ke_data.stats.searches }}</h2>
-<ul>
-{% for s in searches %}
-    <li><a href="/finder/{{ s[0] }}">{{ s[0] }}</a> ({{ s[1] }})</li>
-{% endfor %}
-</ul>
+    <h2>Búsquedas: {{ ke_data.stats.searches }}</h2>
+    <ul>
+    {% for s in searches %}
+        <li><a href="/finder/{{ s[0] }}">{{ s[0] }}</a> ({{ s[1] }})</li>
+    {% endfor %}
+    </ul>
 </div>
 
 {% include "footer.html" %}

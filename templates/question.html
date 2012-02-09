@@ -1,6 +1,118 @@
 {% include "header.html" %}
 
-<script type="text/javascript" src="/static/question.js"></script>
+<script type="text/javascript">
+    var load_timeout;
+    var answer_order;
+    function load_answers() {
+        $.ajax({
+            type: 'POST',
+            url: '/answers',
+            dataType: 'html',
+            data: 'idq={{ question.id }}&order='+answer_order,
+            success: function(datos) {
+                $("#question_answers").html(datos);
+                load_timeout = setTimeout('load_answers()', 300000);
+            }
+        });
+    }
+    function vote_answer(ida, positive) {
+        var texto;
+        if(positive)
+            texto = 'ida='+ida+'&option=positive';
+        else
+            texto = 'ida='+ida+'&option=negative';
+        $.ajax({
+            type: 'POST',
+            url: '/vote_answers',
+            dataType: 'html',
+            data: texto,
+            success: function(datos) {
+                if(datos.substring(0, 2) == 'OK')
+                {
+                    var messg2 = datos.split(';');
+                    $("#answer_grade_"+messg2[1]).html(messg2[2]);
+                    $("#current_user_points").html("Tienes <b>"+messg2[3]+"</b> puntos");
+                }
+                else { alert(datos); }
+            }
+        });
+    }
+    function mark_solution(ida) {
+        $.ajax({
+            type: 'POST',
+            url: '/vote_answers',
+            dataType: 'html',
+            data: 'ida='+ida+'&option=solution',
+            success: function(datos) {
+                if(datos.substring(0, 2) == 'OK')
+                { window.location.reload(); }
+                else
+                { alert(datos); }
+            }
+        });
+    }
+    $(document).ready(function() {
+    {% if question.is_solved() %}
+        answer_order = 'grade';
+        $("#answers_order_grade").addClass('selected');
+    {% else %}
+        answer_order = 'normal';
+        $("#answers_order_normal").addClass('selected');
+    {% endif  %}
+        load_answers();
+        $("#add_reward").click(function(event) {
+            event.preventDefault();
+            $.ajax({
+                type: 'POST',
+                url: '/question_reward',
+                dataType: 'html',
+                data: 'idq={{ question.id }}',
+                success: function(datos) {
+                    if(datos.substring(0, 2) == 'OK')
+                    {
+                        var messg2 = datos.split(';');
+                        $("#current_user_points").html("Tienes <b>"+messg2[2]+"</b> puntos");
+                        $("#question_reward").html(messg2[1]);
+                    }
+                    else { alert(datos); }
+                }
+            });
+        });
+        $("#answers_order_normal").click(function(event) {
+            event.preventDefault();
+            answer_order = 'normal';
+            $("#answers_order_grade").removeClass('selected');
+            $("#answers_order_normal").addClass('selected');
+            load_answers();
+        });
+        $("#answers_order_grade").click(function(event) {
+            event.preventDefault();
+            answer_order = 'grade';
+            $("#answers_order_normal").removeClass('selected');
+            $("#answers_order_grade").addClass('selected');
+            load_answers();
+        });
+        $("#f_answer").submit(function(event) {
+            event.preventDefault();
+            var texto = 'idq={{ question.id }}&text='+document.f_answer.text.value;
+            if( document.f_answer.email )
+                texto += '&email='+document.f_answer.email.value;
+            $.ajax({
+                type: 'POST',
+                url: '/answers',
+                dataType: 'html',
+                data: texto,
+                success: function(datos) {
+                    $("#question_answers").html(datos);
+                    document.f_answer.text.value = '';
+                }
+            });
+        });
+        $("#edit_question").click(function() {
+            window.location.href = '/edit_question/{{ question.id }}';
+        });
+    });
+</script>
 
 <table width="100%">
 <tr>
@@ -8,12 +120,15 @@
     <div class="rounded" id="question_info">
         <h2>
             {{ question.get_status() }}
-            <span>{{ question.updated|timesince }}</span>
+            <span>
+                creada: {{ question.created|timesince }},
+                modificada: {{ question.updated|timesince }}
+            </span>
         </h2>
         <div class="reward2">
             <span id="question_reward">{{ question.reward }}</span>
             <br/>
-            <a href="#" onclick="add_reward('{{ question.id }}')" title="añadir un punto a la recompensa">+1 punto</a>
+            <a href="#" id="add_reward" title="añadir un punto a la recompensa">+1 punto</a>
         </div>
         <div>
             <span class="nick_c" onclick="jump2url('{{ question.user.get_link() }}')">{{ question.user.nick }}</span>
@@ -24,7 +139,7 @@
         <div class="long_text">{{ question.text|safe|urlize|linebreaks }}</div>
         <div class="d_right">
         {% if ke_data.user.id == question.user.id or ke_data.user.is_admin() %}
-            <form><input type="button" name="edit" value="editar" onclick="edit_question('{{ question.id }}')"/></form>
+            <form><input type="button" name="edit" value="editar" id="edit_question"/></form>
         {% endif %}
         </div>
     </div>
@@ -36,15 +151,18 @@
 <div class="rounded">
     <h2>Respuestas: {{ question.num_answers }}
         <span>ordenar por:
-            <a id="answers_order_grade" href="#" onclick="set_answer_order('grade')">nota</a> |
-            <a id="answers_order_normal" class="selected" href="#" onclick="set_answer_order('normal')">fecha</a>
+            <a id="answers_order_grade" href="#">nota</a> |
+            <a id="answers_order_normal" href="#">fecha</a>
         </span>
     </h2>
     <div id="question_answers"></div>
     
-    <form name="f_answer" onsubmit="send_answer('{{ question.id }}'); return false">
+    <form name="f_answer" id="f_answer">
         <input type="hidden" name="idq" value="{{ question.id }}"/>
         <textarea name="text" rows="6"></textarea>
+        {% if not ke_data.user.logged_on %}
+            Email: <input type="text" name="email" size="20"/> (necesario).
+        {% endif %}
         <input type="submit" value="enviar"/>
     </form>
 </div>

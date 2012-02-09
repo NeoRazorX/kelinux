@@ -26,6 +26,7 @@ class Ke_user(Base):
     points = Column(Integer, default=10)
     created = Column(DateTime, default=datetime.now())
     last_log_in = Column(DateTime, default=datetime.now())
+    no_emails = Column(Boolean, default=False)
     logged_on = False
     
     def __init__(self):
@@ -36,12 +37,10 @@ class Ke_user(Base):
         self.points = 10
         self.created = datetime.now()
         self.last_log_in = datetime.now()
+        self.no_emails = False
     
     def exists(self):
-        if self.email != '' and self.nick != '':
-            return True
-        else:
-            return False
+        return (self.email != '' and self.nick != '')
     
     def set_nick(self, n):
         n = n.lower()
@@ -66,10 +65,7 @@ class Ke_user(Base):
             return False
     
     def is_admin(self):
-        if self.nick in APP_ADMINS:
-            return True
-        else:
-            return False
+        return (self.nick in APP_ADMINS)
     
     def new_log_key(self):
         self.log_key = hashlib.sha1( str(random.randint(0, 999999)) ).hexdigest()
@@ -112,7 +108,6 @@ class Ke_community(Base):
     description = Column(String(200))
     created = Column(DateTime, default=datetime.now())
     num_users = Column(Integer, default=0)
-    
     users = relationship("Ke_user", secondary=Ke_user_community_table, backref=backref('communities'))
     
     def __init__(self):
@@ -122,10 +117,7 @@ class Ke_community(Base):
         self.num_users = 0
     
     def exists(self):
-        if self.name != '' and self.description != '':
-            return True
-        else:
-            return False
+        return (self.name != '' and self.description != '')
     
     def set_name(self, n):
         n = n.lower()
@@ -169,7 +161,6 @@ class Ke_question(Base):
     num_answers = Column(Integer, default=0)
     status = Column(Integer, default=0)
     reward = Column(Integer, default=1)
-    
     user = relationship('Ke_user', backref=backref('questions'))
     communities = relationship("Ke_community", secondary=Ke_community_question_table, backref=backref('questions'))
     
@@ -182,10 +173,7 @@ class Ke_question(Base):
         self.reward = 1
     
     def exists(self):
-        if self.text != '':
-            return True
-        else:
-            return False
+        return (self.text != '')
     
     def set_text(self, t):
         if t.strip() != '':
@@ -196,9 +184,9 @@ class Ke_question(Base):
     
     def get_resume(self):
         if len(self.text) > 200:
-            return self.text[:200]+'...'
+            return self.text[:200].replace("\n",' ')+'...'
         else:
-            return self.text
+            return self.text.replace("\n",' ')
     
     def set_status(self, s=-1):
         try:
@@ -236,10 +224,7 @@ class Ke_question(Base):
             return 'estado desconocido'
     
     def is_solved(self):
-        if self.status > 10:
-            return True
-        else:
-            return False
+        return (self.status > 10)
     
     def add_reward(self, p):
         try:
@@ -267,10 +252,8 @@ class Ke_answer(Base):
     question_id = Column(BigInteger, ForeignKey('questions.id'))
     created = Column(DateTime, default=datetime.now())
     grade = Column(Integer, default=0)
-    
     user = relationship('Ke_user', backref=backref('answers'))
     question = relationship('Ke_question', backref=backref('answers'))
-    
     num = 1
     
     def __init__(self):
@@ -279,10 +262,7 @@ class Ke_answer(Base):
         self.grade = 0
     
     def exists(self):
-        if self.text != '':
-            return True
-        else:
-            return False
+        return (self.text != '')
     
     def set_text(self, t):
         if t.strip() != '':
@@ -291,11 +271,44 @@ class Ke_answer(Base):
         else:
             return False
     
+    def get_resume(self):
+        if len(self.text) > 200:
+            return self.text[:200].replace("\n",' ')+'...'
+        else:
+            return self.text.replace("\n",' ')
+    
     def get_link(self, full=False):
         if full:
             return 'http://'+APP_DOMAIN+'/question/'+str(self.question_id)
         else:
             return '/question/'+str(self.question_id)
+
+
+# clase de notificación ya mapeada con sqlalchemy
+class Ke_notification(Base):
+    __tablename__ = 'notifications'
+    __table_args__ = {'mysql_engine':'InnoDB', 'mysql_charset': 'utf8'}
+    
+    id = Column(BigInteger, primary_key=True)
+    user_id = Column(BigInteger, ForeignKey('users.id'))
+    date = Column(DateTime, default=datetime.now())
+    text = Column(Text)
+    link = Column(String(250))
+    sendmail = Column(Boolean, default=True)
+    readed = Column(Boolean, default=False)
+    user = relationship('Ke_user', backref=backref('notifications'))
+    
+    def __init__(self):
+        self.date = datetime.now()
+        self.text = ''
+        self.link = APP_DOMAIN
+        self.sendmail = True
+    
+    def get_link(self, full=False):
+        if full:
+            return 'http://'+APP_DOMAIN+self.link
+        else:
+            return self.link
 
 
 class Ke_mail:
@@ -355,12 +368,16 @@ class Ke_web:
             'communities': 0,
             'questions': 0,
             'searches': 0,
-            'chat_users': 0
-        }
+            'chat_users': 0,
+            'notifications': 0
+        },
+        'mainmgs': ''
     }
     chat_log = []
     chat_users = []
     searches = []
+    notifications = {}
+    nicks = []
     
     def first_step(self, title):
         # reiniciamos la sesión con la base de datos
@@ -368,11 +385,12 @@ class Ke_web:
         self.ke_data['description'] = title
         self.ke_data['errormsg'] = False
         self.ke_data['message'] = False
-        self.ke_data['runonload'] = False
+        self.ke_data['notifications'] = False
         self.ke_data['query'] = ''
         self.ke_data['stats']['served_pages'] += 1
         self.get_stats()
         self.fast_log_in()
+        self.count_notifications()
     
     def set_current_user(self, user):
         self.current_user = user
@@ -380,9 +398,6 @@ class Ke_web:
     
     def set_page_description(self, desc):
         self.ke_data['description'] = desc
-    
-    def run_onload(self, f):
-        self.ke_data['runonload'] = f
     
     def get_cookie(self, name):
         try:
@@ -426,7 +441,11 @@ class Ke_web:
     
     def get_all_users(self):
         try:
-            return cherrypy.request.db.query(Ke_user).order_by(Ke_user.nick).all()
+            users = cherrypy.request.db.query(Ke_user).order_by(Ke_user.nick).all()
+            for u in users:
+                if u.nick not in self.nicks:
+                    self.nicks.append(u.nick)
+            return users
         except:
             return []
     
@@ -486,7 +505,7 @@ class Ke_web:
             return []
     
     def increase_reward2question(self, q):
-        if q.exists() and not q.is_solved() and random.randint(0, 99) == 0:
+        if q.exists() and not q.is_solved() and random.randint(0, 49) == 0:
             q.add_reward(1)
             try:
                 cherrypy.request.db.commit()
@@ -499,7 +518,7 @@ class Ke_web:
         else:
             i = 0
             while i < len(self.chat_log):
-                if self.chat_log[i][0] < (datetime.today() - timedelta(hours=3)):
+                if self.chat_log[i][0] < (datetime.today() - timedelta(hours=8)):
                     del self.chat_log[i]
                 else:
                     i += 1
@@ -532,7 +551,7 @@ class Ke_web:
     def check_chat_users(self):
         i = 0
         while i < len(self.chat_users):
-            if self.chat_users[i][3] < (datetime.today() - timedelta(minutes=2)):
+            if self.chat_users[i][3] < (datetime.today() - timedelta(minutes=3)):
                 del self.chat_users[i]
             else:
                 i += 1
@@ -568,10 +587,12 @@ class Ke_web:
                 self.ke_data['stats']['users'] = cherrypy.request.db.query(Ke_user).count()
                 self.ke_data['stats']['communities'] = cherrypy.request.db.query(Ke_community).count()
                 self.ke_data['stats']['questions'] = cherrypy.request.db.query(Ke_question).count()
+                self.ke_data['stats']['notifications'] = cherrypy.request.db.query(Ke_notification).count()
             except:
                 self.ke_data['stats']['users'] = 0
                 self.ke_data['stats']['communities'] = 0
                 self.ke_data['stats']['questions'] = 0
+                self.ke_data['stats']['notifications'] = 0
             self.ke_data['stats']['searches'] = 0
     
     def do_log_in(self, email='', passwd=''):
@@ -618,25 +639,25 @@ class Ke_web:
     
     def register(self, email='', nick='', passwd='', passwd2=''):
         if email == '':
-            self.ke_data['errormsg'] = 'introduce un email'
+            self.ke_data['errormsg'] = 'Introduce un email.'
         elif nick == '':
-            self.ke_data['errormsg'] = 'introduce un nombre de usuario'
+            self.ke_data['errormsg'] = 'Introduce un nombre de usuario.'
         elif passwd == '':
-            self.ke_data['errormsg'] = u'introduce una contraseña'
+            self.ke_data['errormsg'] = u'Introduce una contraseña.'
         elif passwd != passwd2:
-            self.ke_data['errormsg'] = u'las contraseñas no coinciden'
+            self.ke_data['errormsg'] = u'Las contraseñas no coinciden.'
         elif self.get_user_by_email(email).exists():
-            self.ke_data['errormsg'] = 'el email <b>'+email+u'</b> ya está asociado a una cuenta, si ha olvidado la contraseña use el formulario de la izquierda'
+            self.ke_data['errormsg'] = 'El email <b>'+email+u'</b> ya está asociado a una cuenta, si ha olvidado la contraseña use el formulario de la izquierda.'
         elif self.get_user_by_nick(nick).exists():
-            self.ke_data['errormsg'] = 'el nick <b>'+nick+u'</b> ya está asignado a un usuario'
+            self.ke_data['errormsg'] = 'El nick <b>'+nick+u'</b> ya está asignado a un usuario.'
         else:
             user = Ke_user()
             if not user.set_email(email):
-                self.ke_data['errormsg'] = u'el email no es válido'
+                self.ke_data['errormsg'] = u'El email no es válido.'
             elif not user.set_password(passwd):
-                self.ke_data['errormsg'] = u'la contraseña no es válida (debe contener entre 4 y 20 caracteres alfanuméricos)'
+                self.ke_data['errormsg'] = u'La contraseña no es válida (debe contener entre 4 y 20 caracteres alfanuméricos).'
             elif not user.set_nick(nick):
-                self.ke_data['errormsg'] = u'el nombre de usuario no es válido (debe contener entre 4 y 16 caracteres alfanuméricos)'
+                self.ke_data['errormsg'] = u'El nombre de usuario no es válido (debe contener entre 4 y 16 caracteres alfanuméricos).'
             else:
                 try:
                     user.new_log_key()
@@ -647,11 +668,38 @@ class Ke_web:
                     self.set_cookie('log_key', user.log_key)
                 except:
                     cherrypy.request.db.rollback()
-                    self.ke_data['errormsg'] = 'error al guardar el usuario en la base de datos'
+                    self.ke_data['errormsg'] = 'Error al guardar el usuario en la base de datos.'
         if not self.ke_data['errormsg']:
             raise cherrypy.HTTPRedirect('/')
     
-    def update_user(self, email='', passwd='', npasswd='', npasswd2=''):
+    def email2user(self, email=''):
+        if email == '':
+            return 'Debes introducir un email.'
+        else:
+            user = self.get_user_by_email(email)
+            if user.exists():
+                kmail = Ke_mail()
+                kmail.send(user.email, u"Contraseña olvidada", u"Hola %s, te enviamos este email porque tienes problemas para entrar en %s. Haz clic en este enlace %s para iniciar sesión, y posteriormente cambiar la contraseña. Bye!" % (user.nick, APP_DOMAIN, 'http://'+APP_DOMAIN+'/forgotten_password/'+str(user.id)+'/'+user.password))
+                return 'El email <b>'+email+u'</b> ya está asociado a una cuenta. Te hemos enviado un email con un enlace para facilitarte el acceso.'
+            elif not user.set_email(email):
+                return u'el email no es válido.'
+            elif not user.set_nick( email.split('@')[0] ):
+                return u'el nombre de usuario no es válido (debe contener entre 4 y 16 caracteres alfanuméricos).'
+            else:
+                try:
+                    user.password = str(random.randint(0, 999999))
+                    user.new_log_key()
+                    cherrypy.request.db.add(user)
+                    cherrypy.request.db.commit()
+                    self.set_current_user(user)
+                    self.set_cookie('user_id', user.id)
+                    self.set_cookie('log_key', user.log_key)
+                    return 'OK'
+                except:
+                    cherrypy.request.db.rollback()
+                    return 'Error al guardar el usuario en la base de datos.'
+    
+    def update_user(self, email='', passwd='', npasswd='', npasswd2='', noemails=False):
         if not self.current_user.logged_on:
             self.ke_data['errormsg'] = u'debes iniciar sesión o crear una cuenta'
         elif email == '':
@@ -669,6 +717,10 @@ class Ke_web:
                     self.ke_data['errormsg'] = u'las nuevas contraseñas no coinciden'
                 elif not self.current_user.set_password(npasswd):
                     self.ke_data['errormsg'] = u'la contraseña no es válida (debe contener entre 4 y 20 caracteres alfanuméricos)'
+            if noemails:
+                self.current_user.no_emails = True
+            else:
+                self.current_user.no_emails = False
             try:
                 cherrypy.request.db.commit()
                 self.ke_data['message'] = 'usuario modificado correctamente'
@@ -719,21 +771,21 @@ class Ke_web:
     def new_community(self, n='', d=''):
         community = Ke_community()
         if n == '':
-            self.ke_data['errormsg'] = 'introduce un nombre para la comunidad'
+            self.ke_data['errormsg'] = 'Introduce un nombre para la comunidad.'
         elif d == '':
-            self.ke_data['errormsg'] = u'introduce una descripción para la comunidad'
+            self.ke_data['errormsg'] = u'Introduce una descripción para la comunidad.'
         elif not self.current_user.logged_on:
-            self.ke_data['errormsg'] = u'debes iniciar sesión o crear una cuenta'
+            self.ke_data['errormsg'] = u'Debes iniciar sesión o crear una cuenta.'
         elif self.current_user.points < 1:
-            self.ke_data['errormsg'] = 'no tienes suficientes puntos'
+            self.ke_data['errormsg'] = 'No tienes suficientes puntos.'
         elif self.get_community_by_name(n).exists():
-            self.ke_data['errormsg'] = 'la comunidad ya existe'
+            self.ke_data['errormsg'] = 'La comunidad ya existe.'
         else:
             community = Ke_community()
             if not community.set_name(n):
-                self.ke_data['errormsg'] = u'introduce un nombre válido (debe contener entre 3 y 20 caracteres alfanuméricos)'
+                self.ke_data['errormsg'] = u'Introduce un nombre válido (debe contener entre 3 y 20 caracteres alfanuméricos).'
             elif not community.set_description(d):
-                self.ke_data['errormsg'] = u'introduce una descripción válida'
+                self.ke_data['errormsg'] = u'Introduce una descripción válida.'
             else:
                 try:
                     cherrypy.request.db.add(community)
@@ -741,18 +793,23 @@ class Ke_web:
                     cherrypy.request.db.commit()
                 except:
                     cherrypy.request.db.rollback()
-                    self.ke_data['errormsg'] = 'error al guardar la comunidad en la base de datos'
+                    self.ke_data['errormsg'] = 'Error al guardar la comunidad en la base de datos.'
         return community
     
-    def new_question(self, text=''):
+    def new_question(self, text='', email=''):
+        saveq = True
         question = Ke_question()
         if text == '':
-            self.ke_data['errormsg'] = 'introduce algo de texto!'
+            self.ke_data['errormsg'] = '¡Introduce algo de texto!'
+            saveq = False
         elif not self.current_user.logged_on:
-            self.ke_data['errormsg'] = u'debes iniciar sesión o crear una cuenta'
-        else:
+            errorm = self.email2user(email)
+            if errorm != 'OK':
+                self.ke_data['errormsg'] = errorm
+                saveq = False
+        if saveq:
             if not question.set_text(text):
-                self.ke_data['errormsg'] = u'introduce texto válido'
+                self.ke_data['errormsg'] = u'Introduce texto válido.'
             else:
                 question.user = self.current_user
                 for c in self.current_user.communities:
@@ -762,7 +819,7 @@ class Ke_web:
                     cherrypy.request.db.commit()
                 except:
                     cherrypy.request.db.rollback()
-                    self.ke_data['errormsg'] = 'error al guardar la pregunta en la base de datos'
+                    self.ke_data['errormsg'] = 'Error al guardar la pregunta en la base de datos.'
         return question
     
     def add_reward2question(self, idq=''):
@@ -824,12 +881,9 @@ class Ke_web:
             aux = False
         if aux:
             # numeramos
-            mgrade = 0
             i = 0
             while i < len(aux):
                 aux[i].num = i+1
-                if aux[i].grade > 0:
-                    mgrade = aux[i].grade
                 i += 1
             if order == 'grade':
                 # ordenamos teniendo en cuenta las meciones.
@@ -873,32 +927,85 @@ class Ke_web:
                 answers = aux
         return answers
     
-    def new_answer(self, idq='', text=''):
+    def new_answer(self, idq='', text='', email=''):
         question = self.get_question_by_id(idq)
         answer = Ke_answer()
-        if question.exists():
-            if text != '':
-                if self.current_user.logged_on:
-                    if answer.set_text(text):
-                        answer.user = self.current_user
-                        answer.question = question
-                        question.num_answers = len( question.answers )
-                        question.updated = datetime.today()
-                        if question.status == 0:
-                            question.set_status(1)
-                        try:
-                            cherrypy.request.db.add(answer)
-                            cherrypy.request.db.commit()
-                            self.ke_data['message'] = u'respuesta guardada correctamente <a href="#'+str(len(question.answers))+'">@'+str(len(question.answers))+'</a>'
-                        except:
-                            cherrypy.request.db.rollback()
-                            self.ke_data['errormsg'] = u'error al guardar la respuesta en la base de datos'
-                    else:
-                        self.ke_data['errormsg'] = u'introduce texto válido'
-                else:
-                    self.ke_data['errormsg'] = u'debes <a href="/log_in">iniciar sesión</a> o <a href="/log_in">crear una cuenta</a>'
-        else:
+        if not question.exists():
             self.ke_data['errormsg'] = u'pregunta no encontrada'
+        elif text != '':
+            savea = True
+            if not self.current_user.logged_on:
+                errorm = self.email2user(email)
+                if errorm != 'OK':
+                    self.ke_data['errormsg'] = errorm
+                    savea = False
+            if savea:
+                if not answer.set_text(text):
+                    self.ke_data['errormsg'] = u'introduce texto válido'
+                else:
+                    answer.user = self.current_user
+                    answer.question = question
+                    question.num_answers = len( question.answers )
+                    answer.num = question.num_answers
+                    question.updated = datetime.today()
+                    if question.status == 0:
+                        question.set_status(1)
+                    try:
+                        cherrypy.request.db.add(answer)
+                        cherrypy.request.db.commit()
+                        self.ke_data['message'] = u'respuesta guardada correctamente <a href="#'+str(len(question.answers))+'">@'+str(len(question.answers))+'</a>'
+                    except:
+                        cherrypy.request.db.rollback()
+                        self.ke_data['errormsg'] = u'error al guardar la respuesta en la base de datos'
+                    # gestionamos las notificaciones
+                    if not self.ke_data['errormsg']:
+                        if answer.user.id != question.user.id:
+                            noti = Ke_notification()
+                            noti.user = question.user
+                            noti.link = answer.get_link()
+                            noti.text = "%s ha contestado a tu pregunta '%s'.\n%s dice: %s" % (self.current_user.nick,
+                                                                                               question.get_resume(),
+                                                                                               self.current_user.nick,
+                                                                                               answer.get_resume())
+                            try:
+                                cherrypy.request.db.add(noti)
+                                cherrypy.request.db.commit()
+                            except:
+                                cherrypy.request.db.rollback()
+                        for n in self.nicks:
+                            if text.find('@'+n) != -1:
+                                user = self.get_user_by_nick(n)
+                                if user.exists() and user.id != self.current_user.id:
+                                    noti = Ke_notification()
+                                    noti.user = user
+                                    noti.link = answer.get_link()
+                                    noti.text = "%s te ha mencionado en la pregunta '%s'.\n%s dice: %s" % (self.current_user.nick,
+                                                                                                       question.get_resume(),
+                                                                                                       self.current_user.nick,
+                                                                                                       answer.get_resume())
+                                    try:
+                                        cherrypy.request.db.add(noti)
+                                        cherrypy.request.db.commit()
+                                    except:
+                                        cherrypy.request.db.rollback()
+                        answers = self.get_answers(question.id, 'normal')
+                        if len(answers) > 1:
+                            i = len(answers) - 2
+                            while i >= 0:
+                                if answer.text.find('@'+str(i+1)+' ') != -1:
+                                    noti = Ke_notification()
+                                    noti.user = answers[i].user
+                                    noti.link = answer.get_link()
+                                    noti.text = "%s te ha mencionado en la pregunta '%s'.\n%s dice: %s" % (self.current_user.nick,
+                                                                                                           question.get_resume(),
+                                                                                                           self.current_user.nick,
+                                                                                                           answer.get_resume())
+                                    try:
+                                        cherrypy.request.db.add(noti)
+                                        cherrypy.request.db.commit()
+                                    except:
+                                        cherrypy.request.db.rollback()
+                                i -= 1
         return question,answer
     
     def new_vote2answer(self, ida='', points=1):
@@ -969,3 +1076,24 @@ class Ke_web:
         else:
             message = u'respuesta no encontrada'
         return message
+    
+    def count_notifications(self):
+        if self.current_user.logged_on:
+            if random.randint(0, 9) == 0: # no leemos continuamente para no sobrecargar de trabajo
+                notis = cherrypy.request.db.query(Ke_notification).filter_by(user_id=self.current_user.id).filter_by(readed=False).all()
+                self.notifications[self.current_user.id] = len(notis)
+            self.ke_data['notifications'] = self.notifications.get(self.current_user.id, 0)
+    
+    def get_notifications(self):
+        notis = []
+        if self.current_user.logged_on:
+            notis = self.current_user.notifications[-10:]
+            if notis:
+                for n in notis:
+                    n.readed = True
+                try:
+                    cherrypy.request.db.commit()
+                except:
+                    cherrypy.request.db.rollback()
+                notis.reverse()
+        return notis

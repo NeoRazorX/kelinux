@@ -114,7 +114,7 @@ class Main_web(Ke_web):
         return tmpl.render(ke_data=self.ke_data)
     
     @cherrypy.expose
-    def log_in(self, option='', email='', nick='', passwd='', passwd2='', npasswd='', npasswd2='', **params):
+    def log_in(self, option='', email='', nick='', passwd='', passwd2='', npasswd='', npasswd2='', noemails=False, **params):
         self.first_step('log_in')
         if cherrypy.request.method == 'POST':
             if option == 'log_in':
@@ -122,11 +122,14 @@ class Main_web(Ke_web):
             elif option == 'register':
                 self.register(email, nick, passwd, passwd2)
             elif option == 'update':
-                self.update_user(email, passwd, npasswd, npasswd2)
+                self.update_user(email, passwd, npasswd, npasswd2, noemails)
             elif option == 'log_out':
                 self.do_log_out()
         tmpl = env.get_template('log_in.html')
-        return tmpl.render(ke_data=self.ke_data)
+        if self.current_user.logged_on:
+            return tmpl.render(notifications=self.get_notifications(), ke_data=self.ke_data)
+        else:
+            return tmpl.render(ke_data=self.ke_data)
     
     @cherrypy.expose
     def new_password(self, **params):
@@ -165,13 +168,12 @@ class Main_web(Ke_web):
     def finder(self, query='', **params):
         self.first_step('finder')
         self.ke_data['query'] = query
-        self.run_onload('document.f_finder.query.focus()')
         tmpl = env.get_template('finder.html')
         return tmpl.render(questions=self.new_search(query),
                            ke_data=self.ke_data)
     
     @cherrypy.expose
-    def create(self, option='', name='', description='', text='', **params):
+    def create(self, option='', name='', description='', text='', email='', **params):
         self.first_step('create_msg')
         cherrypy.response.headers['Content-Type'] = 'text/plain'
         tmpl = env.get_template('create_msg.html')
@@ -180,7 +182,7 @@ class Main_web(Ke_web):
                                ke_data=self.ke_data,
                                option='community')
         elif option == 'question':
-            return tmpl.render(question=self.new_question(text),
+            return tmpl.render(question=self.new_question(text, email),
                                ke_data=self.ke_data,
                                option='question')
         else:
@@ -301,7 +303,6 @@ class Main_web(Ke_web):
     @cherrypy.expose
     def question(self, idq='', **params):
         self.first_step('question')
-        self.run_onload('load_answers()')
         question = self.get_question_by_id(idq)
         if question.exists():
             self.set_page_description( question.get_resume() )
@@ -374,9 +375,9 @@ class Main_web(Ke_web):
         return self.add_reward2question(idq)
     
     @cherrypy.expose
-    def answers(self, idq='', order='normal', text='', **params):
+    def answers(self, idq='', order='normal', text='', email='', **params):
         self.first_step('question')
-        question,answer = self.new_answer(idq, text)
+        question,answer = self.new_answer(idq, text, email)
         answers = self.get_answers(idq, order)
         tmpl = env.get_template('answers.html')
         return tmpl.render(question=question, answer=answer, answers=answers, ke_data=self.ke_data)
@@ -446,7 +447,6 @@ class Main_web(Ke_web):
     @cherrypy.expose
     def chat_room(self, text='', **params):
         self.first_step('chat_room')
-        self.run_onload('load_chat_log()')
         if cherrypy.request.method == 'POST':
             self.new_chat_msg(text)
             cherrypy.response.headers['Content-Type'] = 'text/plain'
@@ -455,6 +455,24 @@ class Main_web(Ke_web):
         else:
             tmpl = env.get_template('chat_room.html')
             return tmpl.render(ke_data=self.ke_data)
+    
+    @cherrypy.expose
+    def help(self, **params):
+        self.first_step('help')
+        tmpl = env.get_template('help.html')
+        return tmpl.render(ke_data=self.ke_data)
+    
+    @cherrypy.expose
+    def admin(self, text='', **params):
+        self.first_step('admin')
+        if self.current_user.is_admin():
+            if cherrypy.request.method == 'POST':
+                self.ke_data['mainmsg'] = text
+                self.ke_data['message'] = 'mensaje guardado'
+            tmpl = env.get_template('admin.html')
+            return tmpl.render(ke_data=self.ke_data)
+        else:
+            raise cherrypy.HTTPRedirect('/')
     
     @cherrypy.expose
     def sitemap(self, **params):
