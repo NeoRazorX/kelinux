@@ -63,7 +63,7 @@
                     success: function(datos) {
                         $("#error_create").html(datos);
                         var jump2link = $("#jump_2_this_link");
-                        if(jump2link)
+                        if(jump2link.length)
                             jump2url( jump2link.attr('href') );
                     }
                 });
@@ -78,7 +78,7 @@
                     success: function(datos) {
                         $("#error_create").html(datos);
                         var jump2link = $("#jump_2_this_link");
-                        if(jump2link)
+                        if(jump2link.length)
                             jump2url( jump2link.attr('href') );
                     }
                 });
@@ -119,8 +119,9 @@
 </table>
 
 <div id="left_menu">
-    <a id="b_create" href="#" title="crear una pregunta o comunidad">crear</a>
-    <br/><br/>
+    <div id="d_b_create">
+        <a id="b_create" href="#" title="crear una pregunta o comunidad">crear</a>
+    </div>
     <ul>
         {% if ke_data.user.logged_on %}
         <li {{ "log_in"|highlight_page(ke_data.rpage) }} onclick="jump2url('/log_in')">
@@ -129,8 +130,6 @@
         {% else %}
         <li {{ "log_in"|highlight_page(ke_data.rpage) }} onclick="jump2url('/log_in')">iniciar sesión</li>
         {% endif %}
-    </ul>
-    <ul>
         <li {{ "chat_room"|highlight_page(ke_data.rpage) }} onclick="jump2url('/chat_room')">chat <span>{{ ke_data.stats.chat_users }}</span></li>
     </ul>
     <ul>
@@ -152,11 +151,8 @@
 
 <div id="shadow_box"></div>
 <div id="popup_create" class="popup">
-    <h1>¿Qué quieres crear? <a class="b_close" href="#" id="popup_create_close">X</a></h1>
-    <div class="d_options" id="o_create">
-    <a class="option" id="b_create_community" href="#">comunidad</a>
-    <a class="option" id="b_create_question" href="#">pregunta</a>
-    </div>
+    <h1>¿Qué quieres crear? <a class="b_close" id="popup_create_close">X</a></h1>
+    <div class="d_options"><div class="option" id="b_create_community">comunidad</div><div class="option" id="b_create_question">pregunta</div></div>
     <div id="error_create"></div>
     <div class="d_hidden" id="d_create_community">
     {% if ke_data.user.logged_on %}
