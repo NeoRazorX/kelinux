@@ -29,7 +29,7 @@
     <div class="answer">
     {% endif %}
         <a name="{{ a.num }}">@{{ a.num }} </a>
-        <span class="nick_c" onclick="jump2url('{{ a.user.get_link() }}')">{{ a.user.nick }}</span>
+        <a class="nick" href="{{ a.user.get_link() }}">{{ a.user.nick }}</a>
         <span class="date">{{ a.created|timesince }}</span>
         <div class="long_text">{{ a.text|safe|urlize|linebreaks }}</div>
     </div>

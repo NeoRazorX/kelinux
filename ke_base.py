@@ -303,6 +303,7 @@ class Ke_notification(Base):
         self.text = ''
         self.link = APP_DOMAIN
         self.sendmail = True
+        self.readed = False
     
     def get_link(self, full=False):
         if full:
@@ -359,7 +360,8 @@ class Ke_web:
         'appadminemail': APP_ADMIN_EMAIL,
         'analyticsid': GOOGLE_ANALYTICS_ID,
         'adsenses': GOOGLE_ADSENSE_SQUARE_HTML,
-        'description': APP_NAME,
+        'description': APP_DESCRIPTION,
+        'tags': APP_NAME,
         'user': current_user,
         'stats': {
             'uptime': datetime.now(),
@@ -382,7 +384,8 @@ class Ke_web:
     def first_step(self, title):
         # reiniciamos la sesión con la base de datos
         self.ke_data['rpage'] = title
-        self.ke_data['description'] = title
+        self.ke_data['tags'] = APP_NAME
+        self.ke_data['description'] = APP_DESCRIPTION
         self.ke_data['errormsg'] = False
         self.ke_data['message'] = False
         self.ke_data['notifications'] = False
@@ -398,6 +401,10 @@ class Ke_web:
     
     def set_page_description(self, desc):
         self.ke_data['description'] = desc
+    
+    def set_tags(self, tags=[]):
+        for t in tags:
+            self.ke_data['tags'] += ', '+t
     
     def get_cookie(self, name):
         try:
@@ -972,12 +979,14 @@ class Ke_web:
                                 cherrypy.request.db.commit()
                             except:
                                 cherrypy.request.db.rollback()
+                        nicks_notified = [question.user.nick, self.current_user.nick]
                         for n in self.nicks:
-                            if text.find('@'+n) != -1:
+                            if text.find('@'+n) != -1 and n not in nicks_notified:
                                 user = self.get_user_by_nick(n)
-                                if user.exists() and user.id != self.current_user.id:
+                                if user.exists():
                                     noti = Ke_notification()
                                     noti.user = user
+                                    nicks_notified.append(user.nick)
                                     noti.link = answer.get_link()
                                     noti.text = "%s te ha mencionado en la pregunta '%s'.\n%s dice: %s" % (self.current_user.nick,
                                                                                                        question.get_resume(),
@@ -992,9 +1001,10 @@ class Ke_web:
                         if len(answers) > 1:
                             i = len(answers) - 2
                             while i >= 0:
-                                if answer.text.find('@'+str(i+1)+' ') != -1:
+                                if answer.text.find('@'+str(i+1)+' ') != -1 and answers[i].user.nick not in nicks_notified:
                                     noti = Ke_notification()
                                     noti.user = answers[i].user
+                                    nicks_notified.append(answers[i].user.nick)
                                     noti.link = answer.get_link()
                                     noti.text = "%s te ha mencionado en la pregunta '%s'.\n%s dice: %s" % (self.current_user.nick,
                                                                                                            question.get_resume(),
@@ -1079,7 +1089,7 @@ class Ke_web:
     
     def count_notifications(self):
         if self.current_user.logged_on:
-            if random.randint(0, 9) == 0: # no leemos continuamente para no sobrecargar de trabajo
+            if random.randint(0, 8) == 0: # no leemos continuamente para no sobrecargar de trabajo
                 notis = cherrypy.request.db.query(Ke_notification).filter_by(user_id=self.current_user.id).filter_by(readed=False).all()
                 self.notifications[self.current_user.id] = len(notis)
             self.ke_data['notifications'] = self.notifications.get(self.current_user.id, 0)
@@ -1091,8 +1101,12 @@ class Ke_web:
             if notis:
                 for n in notis:
                     n.readed = True
+                    n.sendmail = False
                 try:
                     cherrypy.request.db.commit()
+                    # ponemos a cero el contador de notificaciones sin leer
+                    if self.notifications.get(self.current_user.id, 0) < 10:
+                        self.notifications[self.current_user.id] = 0
                 except:
                     cherrypy.request.db.rollback()
                 notis.reverse()

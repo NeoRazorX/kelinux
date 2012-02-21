@@ -480,6 +480,12 @@ span.nick_c:hover {
     cursor: pointer;
 }
 
+a.nick {
+    font-weight: bold;
+    margin-right: 5px;
+    color: black;
+}
+
 span.community, span.community_c {
     background-color: #F4F596;
     border: 1px solid #E4E58D;
@@ -494,6 +500,19 @@ span.community, span.community_c {
 
 span.community_c:hover {
     cursor: pointer;
+}
+
+a.community {
+    background-color: #F4F596;
+    color: black;
+    border: 1px solid #E4E58D;
+    border-top-left-radius: 2px 2px;
+    border-top-right-radius: 2px 2px;
+    border-bottom-left-radius: 2px 2px;
+    border-bottom-right-radius: 2px 2px;
+    margin-left: 5px;
+    padding-left: 5px;
+    padding-right: 5px;
 }
 
 span.tag, span.num_answers {

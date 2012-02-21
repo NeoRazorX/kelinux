@@ -131,9 +131,9 @@
             <a href="#" id="add_reward" title="añadir un punto a la recompensa">+1 punto</a>
         </div>
         <div>
-            <span class="nick_c" onclick="jump2url('{{ question.user.get_link() }}')">{{ question.user.nick }}</span>
+            <a class="nick" href="{{ question.user.get_link() }}">{{ question.user.nick }}</a>
             {% for c in question.communities %}
-                <span class="community_c" onclick="jump2url('{{ c.get_link() }}')">{{ c.name }}</span>
+                <a class="community" href="{{ c.get_link() }}">{{ c.name }}</a>
             {% endfor %}
         </div>
         <div class="long_text">{{ question.text|safe|urlize|linebreaks }}</div>

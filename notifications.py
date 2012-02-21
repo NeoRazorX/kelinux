@@ -22,7 +22,7 @@ class notifications:
         if notis:
             for n in notis:
                 subject = n.text[:50]+'...'
-                body = u"""Notificación de %s.\n\n%s - %s\n\nSi no desa recibir más emails marque la casilla en su perfil.
+                body = u"""Notificación de %s.\n\n%s - %s\n\nSi no desea recibir más emails marque la casilla en su perfil.
 Atentamente el cron de %s.""" % (APP_DOMAIN, n.text, n.get_link(True), APP_NAME)
                 try:
                     if not n.user.no_emails:

@@ -1,7 +1,55 @@
 {% include "header.html" %}
 
 <script type="text/javascript">
+    function load_answers() {
+        $.ajax({
+            type: 'POST',
+            url: '/answers',
+            dataType: 'html',
+            data: 'idq={{ question.id }}&order=normal',
+            success: function(datos) {
+                $("#question_answers").html(datos);
+            }
+        });
+    }
+    function vote_answer(ida, positive) {
+        var texto;
+        if(positive)
+            texto = 'ida='+ida+'&option=positive';
+        else
+            texto = 'ida='+ida+'&option=negative';
+        $.ajax({
+            type: 'POST',
+            url: '/vote_answers',
+            dataType: 'html',
+            data: texto,
+            success: function(datos) {
+                if(datos.substring(0, 2) == 'OK')
+                {
+                    var messg2 = datos.split(';');
+                    $("#answer_grade_"+messg2[1]).html(messg2[2]);
+                    $("#current_user_points").html("Tienes <b>"+messg2[3]+"</b> puntos");
+                }
+                else { alert(datos); }
+            }
+        });
+    }
+    function mark_solution(ida) {
+        $.ajax({
+            type: 'POST',
+            url: '/vote_answers',
+            dataType: 'html',
+            data: 'ida='+ida+'&option=solution',
+            success: function(datos) {
+                if(datos.substring(0, 2) == 'OK')
+                { window.location.reload(); }
+                else
+                { alert(datos); }
+            }
+        });
+    }
     $(document).ready(function() {
+        load_answers();
         $("#remove_question").click(function() {
             if( confirm('Estas completamente seguro de querer eliminar esta pregunta?') )
             {
@@ -20,7 +68,7 @@
     <form name="f_edit_question" method="POST">
         <textarea rows="15" name="text">{{ question.text }}</textarea>
         <div>
-            <b>Comunidades:</b>
+            <a href="/community_list">Comunidades:</a>
             {% for c in communities%}
                 {% if c in question.communities %}
                 <input type="checkbox" name="communities" value="{{ c.id }}" checked/>{{ c.name }}
@@ -61,6 +109,14 @@
         </tr>
         </table>
     </form>
+</div>
+
+<div class="message">No olvides votar las mejores respuestas, especialmente la que sea la solición.
+    Pon el puntero sobre los números de la izquierda para que aparezcan los controles</div>
+
+<div class="rounded">
+    <h2>Respuestas: {{ question.num_answers }}</h2>
+    <div id="question_answers"></div>
 </div>
 
 {% include "footer.html" %}
