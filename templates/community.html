@@ -54,13 +54,13 @@
         {% for q in questions %}
             <div class="question_box">
                 <div class="reward">{{ q.reward }}</div>
-                <div class="question" onclick="jump2url('{{ q.get_link() }}')">
+                <a class="question" href="{{ q.get_link() }}">
                     <span class="tag">{{ q.get_status() }}</span>
                     <span class="nick">{{ q.user.nick }}</span>
                     <span class="num_answers">{{ q.num_answers }}</span>
                     <span class="date">{{ q.updated|timesince }}</span>
                     <div class="resume">{{ q.get_resume() }}</div>
-                </div>
+                </a>
             </div>
         {% endfor %}
         </div>

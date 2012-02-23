@@ -124,27 +124,27 @@
     </div>
     <ul>
         {% if ke_data.user.logged_on %}
-        <li {{ "log_in"|highlight_page(ke_data.rpage) }} onclick="jump2url('/log_in')">
-            {{ ke_data.user.nick }} <span>{{ ke_data.notifications }}</span>
+        <li>
+            <a {{ "log_in"|highlight_page(ke_data.rpage) }} href="/log_in">{{ ke_data.user.nick }} <span>{{ ke_data.notifications }}</span></a>
         </li>
         {% else %}
-        <li {{ "log_in"|highlight_page(ke_data.rpage) }} onclick="jump2url('/log_in')">iniciar sesión</li>
+        <li><a {{ "log_in"|highlight_page(ke_data.rpage) }} href="/log_in">iniciar sesión</a></li>
         {% endif %}
-        <li {{ "chat_room"|highlight_page(ke_data.rpage) }} onclick="jump2url('/chat_room')">chat <span>{{ ke_data.stats.chat_users }}</span></li>
+        <li><a {{ "chat_room"|highlight_page(ke_data.rpage) }} href="/chat_room">chat <span>{{ ke_data.stats.chat_users }}</span></a></li>
     </ul>
     <ul>
-        <li {{ "index"|highlight_page(ke_data.rpage) }} onclick="jump2url('/')">portada</li>
-        <li {{ "community_list"|highlight_page(ke_data.rpage) }} onclick="jump2url('/community_list')">comunidades</li>
-        <li {{ "question_list"|highlight_page(ke_data.rpage) }} onclick="jump2url('/question_list')">preguntas</li>
-        <li {{ "user_list"|highlight_page(ke_data.rpage) }} onclick="jump2url('/user_list')">usuarios</li>
+        <li><a {{ "index"|highlight_page(ke_data.rpage) }} href="/">portada</a></li>
+        <li><a {{ "community_list"|highlight_page(ke_data.rpage) }} href="/community_list">comunidades</a></li>
+        <li><a {{ "question_list"|highlight_page(ke_data.rpage) }} href="/question_list">preguntas</a></li>
+        <li><a {{ "user_list"|highlight_page(ke_data.rpage) }} href="/user_list">usuarios</a></li>
     </ul>
     <ul>
-        <li {{ "stats"|highlight_page(ke_data.rpage) }} onclick="jump2url('/stats')">estadísticas</li>
-        <li {{ "help"|highlight_page(ke_data.rpage) }} onclick="jump2url('/help')">ayuda</li>
+        <li><a {{ "stats"|highlight_page(ke_data.rpage) }} href="/stats">estadísticas</a></li>
+        <li><a {{ "help"|highlight_page(ke_data.rpage) }} href="/help">ayuda</a></li>
     </ul>
     {% if ke_data.user.is_admin() %}
     <ul>
-        <li {{ "admin"|highlight_page(ke_data.rpage) }} onclick="jump2url('/admin')">admin</li>
+        <li><a {{ "admin"|highlight_page(ke_data.rpage) }} href="/admin">admin</a></li>
     </ul>
     {% endif %}
 </div>

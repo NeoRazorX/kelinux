@@ -198,17 +198,23 @@ div#left_menu ul li {
     text-transform: capitalize;
     color: black;
     font-size: 15px;
+    padding: 0px;
+}
+
+div#left_menu ul li a {
+    display: block;
     padding: 2px;
     padding-left: 5px;
     padding-right: 5px;
+    color: black;
+    text-decoration: none;
 }
 
-div#left_menu li:hover {
+div#left_menu ul li a:hover {
     background-color: #D8DFEA;
-    cursor: pointer;
 }
 
-div#left_menu li.selected {
+div#left_menu ul li a.selected {
     background-color: #4A8BF5;
     color: white;
 }
@@ -365,7 +371,6 @@ div.questions div.question_box {
 
 div.questions div.question_box:hover {
     background-color: #D8DFEA;
-    cursor: pointer;
 }
 
 div.questions div.question_box div.reward {
@@ -376,14 +381,16 @@ div.questions div.question_box div.reward {
     margin-right: 5px;
 }
 
-div.questions div.question_box div.question {
+div.questions div.question_box a.question {
     display: table-cell;
     vertical-align: top;
     padding: 5px;
     min-height: 30px;
+    text-decoration: none;
+    color: black;
 }
 
-div.questions div.question_box div.question div.resume {
+div.questions div.question_box a.question div.resume {
     margin-top: 3px;
 }
 

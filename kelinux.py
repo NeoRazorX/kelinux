@@ -508,14 +508,14 @@ class Main_web(Ke_web):
     def sitemap(self, **params):
         self.first_step('sitemap')
         communities = self.get_all_communities()
-        questions = self.get_front_questions()
+        questions = self.get_all_questions()
         users = self.get_all_users()
         document = "<?xml version='1.0' encoding='UTF-8'?>\n"
         document += "<urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'>\n"
         for c in communities:
             document += "<url><loc>" + c.get_link(True) + "</loc><lastmod>" + str(c.created).split(' ')[0] + "</lastmod><changefreq>always</changefreq><priority>0.8</priority></url>\n"
         for q in questions:
-            document += "<url><loc>" + q.get_link(True) + "</loc><lastmod>" + str(q.created).split(' ')[0] + "</lastmod><changefreq>always</changefreq><priority>0.8</priority></url>\n"
+            document += "<url><loc>" + q.get_link(True) + "</loc><lastmod>" + str(q.created).split(' ')[0] + "</lastmod><changefreq>always</changefreq><priority>0.9</priority></url>\n"
         for u in users:
             document += "<url><loc>" + u.get_link(True) + "</loc><lastmod>" + str(u.created).split(' ')[0] + "</lastmod><changefreq>always</changefreq><priority>0.8</priority></url>\n"
         document += "</urlset>\n"
