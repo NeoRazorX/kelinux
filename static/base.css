@@ -591,6 +591,12 @@ table#chat_form_table td#b_send {
     width: 70px;
 }
 
+table#chat_form_table td#b_send input {
+    background-color: #3768B8;
+    color: white;
+    border: 1px outset #3768B8;
+}
+
 table#chat_form_table input#i_chat_text {
     width: 99%;
 }

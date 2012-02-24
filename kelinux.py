@@ -215,7 +215,7 @@ class Main_web(Ke_web):
         community = self.get_community_by_name(name)
         if community.exists():
             self.set_tags([community.name])
-            self.set_page_description( community.description )
+            self.set_page_description(community.description+" | Orden: "+order)
             try:
                 num = int(num)
             except:
@@ -303,7 +303,7 @@ class Main_web(Ke_web):
     @cherrypy.expose
     def question_list(self, order='created', num=0, **params):
         self.first_step('question_list')
-        self.set_page_description("Lista de preguntas de "+APP_DOMAIN)
+        self.set_page_description("Lista de preguntas de "+APP_DOMAIN+" | Orden: "+order)
         try:
             num = int(num)
         except:
@@ -433,7 +433,7 @@ class Main_web(Ke_web):
         self.first_step('user')
         user = self.get_user_by_nick(nick)
         if user.exists():
-            self.set_page_description('Perfil del usuario '+nick)
+            self.set_page_description('Perfil del usuario '+nick+" | Orden: "+order)
             try:
                 num = int(num)
             except:
