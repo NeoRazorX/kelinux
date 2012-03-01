@@ -115,7 +115,8 @@ class Main_web(Ke_web):
     @cherrypy.expose
     def default(self, attr='', **params):
         self.first_step('error')
-        self.set_page_description("Se ha producido un error al cargar la página de "+APP_DOMAIN)
+        self.set_page_title(u"Se ha producido un error al cargar la página de "+APP_DOMAIN)
+        self.set_page_description(u"Se ha producido un error al cargar la página de "+APP_DOMAIN)
         tmpl = env.get_template('error.html')
         return tmpl.render(ke_data=self.ke_data)
     
@@ -174,6 +175,7 @@ class Main_web(Ke_web):
     def finder(self, query='', **params):
         self.first_step('finder')
         self.set_tags([query])
+        self.set_page_title( u"Resultados de la búsqueda '%s' en %s" % (query, APP_DOMAIN) )
         self.set_page_description( u"Resultados de la búsqueda '%s' en %s" % (query, APP_DOMAIN) )
         self.ke_data['query'] = query
         tmpl = env.get_template('finder.html')
@@ -199,6 +201,7 @@ class Main_web(Ke_web):
     @cherrypy.expose
     def community_list(self, **params):
         self.first_step('community_list')
+        self.set_page_title("Lista de comunidades de "+APP_DOMAIN)
         self.set_page_description("Lista de comunidades de "+APP_DOMAIN)
         tags = []
         communities = self.get_all_communities()
@@ -215,6 +218,7 @@ class Main_web(Ke_web):
         community = self.get_community_by_name(name)
         if community.exists():
             self.set_tags([community.name])
+            self.set_page_title(community.description)
             self.set_page_description(community.description+" | Orden: "+order)
             try:
                 num = int(num)
@@ -273,6 +277,7 @@ class Main_web(Ke_web):
                             cherrypy.request.db.rollback()
                             self.ke_data['errormsg'] = u'error al guardar las modificaciones en la base de datos'
             self.set_tags([community.name])
+            self.set_page_title( community.description )
             self.set_page_description( community.description )
             tmpl = env.get_template('edit_community.html')
             return tmpl.render(community=community, ke_data=self.ke_data)
@@ -303,6 +308,7 @@ class Main_web(Ke_web):
     @cherrypy.expose
     def question_list(self, order='created', num=0, **params):
         self.first_step('question_list')
+        self.set_page_title("Lista de preguntas de "+APP_DOMAIN)
         self.set_page_description("Lista de preguntas de "+APP_DOMAIN+" | Orden: "+order)
         try:
             num = int(num)
@@ -322,6 +328,7 @@ class Main_web(Ke_web):
         self.first_step('question')
         question = self.get_question_by_id(idq)
         if question.exists():
+            self.set_page_title( question.get_resume() )
             self.set_page_description( question.get_resume() )
             tags = []
             communities = question.communities
@@ -382,6 +389,7 @@ class Main_web(Ke_web):
                         except:
                             cherrypy.request.db.rollback()
                             self.ke_data['errormsg'] = u'error al guardar las modificaciones en la base de datos'
+            self.set_page_title( question.get_resume() )
             self.set_page_description( question.get_resume() )
             tmpl = env.get_template('edit_question.html')
             return tmpl.render(question=question,
@@ -419,6 +427,7 @@ class Main_web(Ke_web):
     @cherrypy.expose
     def user_list(self, **params):
         self.first_step('user_list')
+        self.set_page_title("Lista de usuarios de "+APP_DOMAIN)
         self.set_page_description("Lista de usuarios de "+APP_DOMAIN)
         userlist = self.get_all_users()
         tags = []
@@ -433,6 +442,7 @@ class Main_web(Ke_web):
         self.first_step('user')
         user = self.get_user_by_nick(nick)
         if user.exists():
+            self.set_page_title('Perfil del usuario '+nick)
             self.set_page_description('Perfil del usuario '+nick+" | Orden: "+order)
             try:
                 num = int(num)
@@ -468,6 +478,7 @@ class Main_web(Ke_web):
     @cherrypy.expose
     def stats(self, **params):
         self.first_step('stats')
+        self.set_page_title(u"Página de estadísticas de "+APP_DOMAIN)
         self.set_page_description(u"Página de estadísticas de "+APP_DOMAIN)
         tmpl = env.get_template('stats.html')
         return tmpl.render(searches=self.get_searches(), ke_data=self.ke_data)
@@ -475,6 +486,7 @@ class Main_web(Ke_web):
     @cherrypy.expose
     def chat_room(self, text='', **params):
         self.first_step('chat_room')
+        self.set_page_title("Chat interno de "+APP_DOMAIN)
         self.set_page_description("Chat interno de "+APP_DOMAIN)
         if cherrypy.request.method == 'POST':
             self.new_chat_msg(text)
@@ -488,6 +500,7 @@ class Main_web(Ke_web):
     @cherrypy.expose
     def help(self, **params):
         self.first_step('help')
+        self.set_page_title(u"Página de ayuda de "+APP_DOMAIN)
         self.set_page_description(u"Página de ayuda de "+APP_DOMAIN)
         tmpl = env.get_template('help.html')
         return tmpl.render(ke_data=self.ke_data)

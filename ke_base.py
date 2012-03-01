@@ -360,6 +360,7 @@ class Ke_web:
         'appadminemail': APP_ADMIN_EMAIL,
         'analyticsid': GOOGLE_ANALYTICS_ID,
         'adsenses': GOOGLE_ADSENSE_SQUARE_HTML,
+        'title': APP_NAME,
         'description': APP_DESCRIPTION,
         'tags': APP_NAME,
         'user': current_user,
@@ -383,6 +384,7 @@ class Ke_web:
     
     def first_step(self, title):
         # reiniciamos la sesión con la base de datos
+        self.ke_data['title'] = title
         self.ke_data['rpage'] = title
         self.ke_data['tags'] = APP_NAME
         self.ke_data['description'] = APP_DESCRIPTION
@@ -398,6 +400,12 @@ class Ke_web:
     def set_current_user(self, user):
         self.current_user = user
         self.ke_data['user'] = self.current_user
+    
+    def set_page_title(self, t):
+        if len(t) < 50:
+            self.ke_data['title'] = t
+        else:
+            self.ke_data['title'] = t[:47]+'...'
     
     def set_page_description(self, desc):
         self.ke_data['description'] = desc

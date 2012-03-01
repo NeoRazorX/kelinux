@@ -1,7 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="es" lang="es">
 <head>
-    <title>{{ ke_data.appname }}</title>
+    <title>{{ ke_data.title }}</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta name="keywords" content="{{ ke_data.tags }}" />
     <meta name="description" content="{{ ke_data.description }}" />
@@ -100,7 +100,7 @@
 <body>
 <table id="header_menu">
     <tr>
-        <td id="logo"><a href="/"><img src="/img/logo.png" alt="{{ ke_data.appname }}"/></a></td>
+        <td id="logo"><a href="{{ ke_data.appdomain }}"><img src="/img/logo.png" alt="{{ ke_data.appname }}"/></a></td>
         <td id="finder">
             <form name="f_finder" action="/finder" method="POST">
                 <input type="text" name="query" size="30" maxlength="99" value="{{ ke_data.query }}"/>
