@@ -107,6 +107,7 @@ class Main_web(Ke_web):
         for c in communities:
             tags.append(c.name)
         self.set_tags(tags)
+        self.set_page_title(APP_NAME)
         tmpl = env.get_template('main.html')
         return tmpl.render(question_list=self.get_front_questions(),
                            community_list=communities,

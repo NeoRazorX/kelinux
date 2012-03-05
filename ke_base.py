@@ -383,19 +383,22 @@ class Ke_web:
     nicks = []
     
     def first_step(self, title):
-        # reiniciamos la sesión con la base de datos
-        self.ke_data['title'] = title
-        self.ke_data['rpage'] = title
-        self.ke_data['tags'] = APP_NAME
-        self.ke_data['description'] = APP_DESCRIPTION
-        self.ke_data['errormsg'] = False
-        self.ke_data['message'] = False
-        self.ke_data['notifications'] = False
-        self.ke_data['query'] = ''
-        self.ke_data['stats']['served_pages'] += 1
-        self.get_stats()
-        self.fast_log_in()
-        self.count_notifications()
+        if (APP_DOMAIN not in cherrypy.url()) and ('localhost' not in cherrypy.url()):
+            raise cherrypy.HTTPRedirect('http://'+APP_DOMAIN)
+        else:
+            # reiniciamos la sesión con la base de datos
+            self.ke_data['title'] = title
+            self.ke_data['rpage'] = title
+            self.ke_data['tags'] = APP_NAME
+            self.ke_data['description'] = APP_DESCRIPTION
+            self.ke_data['errormsg'] = False
+            self.ke_data['message'] = False
+            self.ke_data['notifications'] = False
+            self.ke_data['query'] = ''
+            self.ke_data['stats']['served_pages'] += 1
+            self.get_stats()
+            self.fast_log_in()
+            self.count_notifications()
     
     def set_current_user(self, user):
         self.current_user = user
