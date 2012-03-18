@@ -2,15 +2,18 @@
 <tr>
     <td>
     <div class="rounded">
-        <h2>Mensajes en orden inverso. No reveles nunca tus contraseñas.</h2>
-        {% for c in chat_log %}
-        <div class="{{ loop.cycle('chat_msg', 'chat_msg2') }}">
-            <span class="nick">{{ c[1] }}</span>
-            <span class="date">{{ c[0]|timesince }}</span>
-            <br/>
-            {{ c[2]|urlize }}
-        </div>
-        {% endfor %}
+        {% if chat_log %}
+            {% for c in chat_log %}
+            <div class="{{ loop.cycle('chat_msg', 'chat_msg2') }}">
+                <span class="nick">{{ c[1] }}</span>
+                <span class="date">{{ c[0]|timesince }}</span>
+                <br/>
+                {{ c[2]|urlize }}
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="message">Describe tu problema y enseguida alguien contestará.</div>
+        {% endif %}
     </div>
     </td>
     <td class="user_list">

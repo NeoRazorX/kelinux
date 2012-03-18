@@ -6,6 +6,7 @@
     <meta name="keywords" content="{{ ke_data.tags }}" />
     <meta name="description" content="{{ ke_data.description }}" />
     <meta name="Robots" content="all" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
     <link rel="stylesheet" href="/static/base.css" type="text/css" />
     <script type="text/javascript" src="/static/jquery.js"></script>
     <script type="text/javascript">
@@ -52,6 +53,7 @@
             });
             $("#f_create_question").submit(function(event) {
                 event.preventDefault();
+                $("#f_create_question_submit").attr("disabled", "disabled");
                 var texto = 'option=question&text='+document.f_create_question.text.value;
                 if( document.f_create_question.email )
                     texto += '&email='+document.f_create_question.email.value;
@@ -70,6 +72,7 @@
             });
             $("#f_create_community").submit(function(event) {
                 event.preventDefault();
+                $("#f_create_community").attr("disabled", "disabled");
                 $.ajax({
                     type: 'POST',
                     url: '/create',
@@ -82,6 +85,9 @@
                             jump2url( jump2link.attr('href') );
                     }
                 });
+            });
+            $("#stats").click(function() {
+                jump2url('/help');
             });
         });
     </script>
@@ -96,13 +102,12 @@
         })();
     </script>
 </head>
-
 <body>
 <table id="header_menu">
     <tr>
-        <td id="logo"><a href="http://{{ ke_data.appdomain }}"><img src="/img/logo.png" alt="{{ ke_data.appname }}"/></a></td>
+        <td id="logo"><a href="/"><img src="/img/logo.png" alt="{{ ke_data.appname }}"/></a></td>
         <td id="finder">
-            <form name="f_finder" action="/finder" method="POST">
+            <form name="f_finder" action="/finder" method="post">
                 <input type="text" name="query" size="30" maxlength="99" value="{{ ke_data.query }}"/>
                 <input id="b_find" type="submit" value="buscar"/>
             </form>
@@ -111,8 +116,7 @@
             {% if ke_data.user.logged_on %}
                 <span id="current_user_points">Tienes <b>{{ ke_data.user.points }}</b> puntos</span>
             {% else %}
-                <span>Uptime: {{ ke_data.stats.uptime|timesince(False) }}</span>
-                <span>Páginas servidas: {{ ke_data.stats.served_pages }}</span>
+                <a href="/log_in">iniciar sesión</a>
             {% endif %}
         </td>
     </tr>
@@ -168,7 +172,7 @@
         </tr>
         <tr>
             <td colspan="2">
-                <div class="d_right">Cuesta 1 punto &nbsp; <input type="submit" value="crear"/></div>
+                <div class="d_right">Cuesta 1 punto &nbsp; <input type="submit" id="f_create_community_submit" value="crear"/></div>
             </td>
         </tr>
     </form>
@@ -183,7 +187,7 @@
         {% if not ke_data.user.logged_on %}
             Email: <input type="text" name="email" size="20"/> (necesario).
         {% endif %}
-            <div class="d_right">Cuesta 0 puntos &nbsp; <input type="submit" value="crear"/></div>
+            <div class="d_right">Cuesta 0 puntos &nbsp; <input type="submit" id="f_create_question_submit" value="crear"/></div>
         </form>
     </div>
 </div>

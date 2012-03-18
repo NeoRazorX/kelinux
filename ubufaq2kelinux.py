@@ -1,25 +1,26 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys
+import sys, ke_base, random
 from ke_config import *
-from ke_base import *
 from sqlalchemy import MetaData, create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from xml.etree.ElementTree import ElementTree
+from datetime import datetime, timedelta
+
 
 class ubufaq2kelinux:
     engine = create_engine("mysql://%s:%s@%s:%s/%s" % (MYSQL_USER, MYSQL_PASS, MYSQL_HOST, MYSQL_PORT, MYSQL_DBNAME),
                            encoding='utf-8', convert_unicode=True, echo=APP_DEBUG)
-    ubufaq_user = Ke_user()
-    mail = Ke_mail()
+    ubufaq_user = ke_base.Ke_user()
+    mail = ke_base.Ke_mail()
     
     def __init__(self, filename=''):
         # creamos la sesión con la base de datos
         self.session = scoped_session(sessionmaker(bind=self.engine))
         
         # creamos/comprobamos la estructura de tablas
-        Base.metadata.create_all(self.engine)
+        ke_base.Base.metadata.create_all(self.engine)
         
         continuar = False
         self.ubufaq_user = self.get_user_by_email( UBUNTUFAQ_USER_EMAIL )
@@ -43,11 +44,11 @@ class ubufaq2kelinux:
     
     def get_user_by_email(self, email):
         try:
-            user = self.session.query(Ke_user).filter_by(email=email).first()
+            user = self.session.query(ke_base.Ke_user).filter_by(email=email).first()
             if user.exists():
                 return user
         except:
-            return Ke_user()
+            return ke_base.Ke_user()
     
     def get_user(self, email=''):
         usuario = self.ubufaq_user
@@ -79,7 +80,7 @@ class ubufaq2kelinux:
         doc = ElementTree()
         doc.parse(filename)
         for node in doc.getroot():
-            question = Ke_question()
+            question = ke_base.Ke_question()
             question.user = self.ubufaq_user
             for c in self.ubufaq_user.communities:
                 question.communities.append(c)
@@ -94,7 +95,7 @@ class ubufaq2kelinux:
                 elif n.tag == 'text':
                     question.text += ' ' + n.text
                 elif n.tag == 'answer':
-                    answer = Ke_answer()
+                    answer = ke_base.Ke_answer()
                     answer.user = self.ubufaq_user
                     answer.question = question
                     for a in n:

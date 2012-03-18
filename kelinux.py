@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os, cherrypy
+import os, cherrypy, ke_base, random
 from ke_config import *
-from ke_base import *
 from sqlalchemy import MetaData, create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from jinja2 import Environment, FileSystemLoader
@@ -24,7 +23,7 @@ class SAEnginePlugin(plugins.SimplePlugin):
         self.sa_engine = create_engine("mysql://%s:%s@%s:%s/%s" % (MYSQL_USER, MYSQL_PASS, MYSQL_HOST, MYSQL_PORT, MYSQL_DBNAME),
                                        encoding='utf-8', convert_unicode=True, echo=APP_DEBUG)
         # creamos/comprobamos la estructura de tablas
-        Base.metadata.create_all(self.sa_engine)
+        ke_base.Base.metadata.create_all(self.sa_engine)
     
     def stop(self):
         if self.sa_engine:
@@ -98,7 +97,7 @@ cp_config = {
     }
 }
 
-class Main_web(Ke_web):
+class Main_web(ke_base.Ke_web):
     @cherrypy.expose
     def index(self, **params):
         self.first_step('index')
@@ -108,10 +107,15 @@ class Main_web(Ke_web):
             tags.append(c.name)
         self.set_tags(tags)
         self.set_page_title(APP_NAME)
-        tmpl = env.get_template('main.html')
-        return tmpl.render(question_list=self.get_front_questions(),
-                           community_list=communities,
-                           ke_data=self.ke_data)
+        if self.current_user.logged_on:
+            tmpl = env.get_template('main.html')
+            return tmpl.render(question_list=self.get_front_questions(),
+                               community_list=communities,
+                               ke_data=self.ke_data)
+        else:
+            tmpl = env.get_template('new_main.html')
+            return tmpl.render(community_list=communities,
+                               ke_data=self.ke_data)
     
     @cherrypy.expose
     def default(self, attr='', **params):
@@ -147,7 +151,7 @@ class Main_web(Ke_web):
             self.current_user.set_password(npassword)
             try:
                 cherrypy.request.db.commit()
-                kmail = Ke_mail()
+                kmail = ke_base.Ke_mail()
                 kmail.send(self.current_user.email, u"Nueva contraseña", u"Hola %s, '%s' es tu nueva contraseña para %s. Bye!"
                                                      % (self.current_user.nick, npassword, APP_DOMAIN))
                 self.ke_data['message'] = u'te hemos enviado un email con la nueva contraseña!'
@@ -228,17 +232,18 @@ class Main_web(Ke_web):
             if num < 0:
                 num = 0
             try:
-                query1 = cherrypy.request.db.query(Ke_question).join((Ke_community, Ke_question.communities)).filter(Ke_question.communities.any(Ke_community.id==community.id))
+                query1 = cherrypy.request.db.query(ke_base.Ke_question).join((ke_base.Ke_community,
+                            ke_base.Ke_question.communities)).filter(ke_base.Ke_question.communities.any(ke_base.Ke_community.id==community.id))
                 if order == 'updated':
-                    questions = query1.order_by(Ke_question.updated.desc())[num:num+50]
+                    questions = query1.order_by(ke_base.Ke_question.updated.desc())[num:num+50]
                 elif order == 'reward':
-                    questions = query1.order_by(Ke_question.reward.desc())[num:num+50]
+                    questions = query1.order_by(ke_base.Ke_question.reward.desc())[num:num+50]
                 elif order == 'status':
-                    questions = query1.order_by(Ke_question.status)[num:num+50]
+                    questions = query1.order_by(ke_base.Ke_question.status)[num:num+50]
                 elif order == 'author':
-                    questions = query1.order_by(Ke_question.user_id)[num:num+50]
+                    questions = query1.order_by(ke_base.Ke_question.user_id)[num:num+50]
                 else:
-                    questions = query1.order_by(Ke_question.id.desc())[num:num+50]
+                    questions = query1.order_by(ke_base.Ke_question.id.desc())[num:num+50]
             except:
                 questions = []
             tmpl = env.get_template('community.html')
@@ -452,18 +457,19 @@ class Main_web(Ke_web):
             if num < 0:
                 num = 0
             try:
-                query1 = cherrypy.request.db.query(Ke_question).filter_by(user_id=user.id)
-                query2 = cherrypy.request.db.query(Ke_question).join((Ke_answer, Ke_question.answers)).filter(Ke_question.answers.any(Ke_answer.user==user))
+                query1 = cherrypy.request.db.query(ke_base.Ke_question).filter_by(user_id=user.id)
+                query2 = cherrypy.request.db.query(ke_base.Ke_question).join((ke_base.Ke_answer,
+                            ke_base.Ke_question.answers)).filter(ke_base.Ke_question.answers.any(ke_base.Ke_answer.user==user))
                 if order == 'updated':
-                    questions = query1.union(query2).order_by(Ke_question.updated.desc())[num:num+50]
+                    questions = query1.union(query2).order_by(ke_base.Ke_question.updated.desc())[num:num+50]
                 elif order == 'reward':
-                    questions = query1.union(query2).order_by(Ke_question.reward.desc())[num:num+50]
+                    questions = query1.union(query2).order_by(ke_base.Ke_question.reward.desc())[num:num+50]
                 elif order == 'status':
-                    questions = query1.union(query2).order_by(Ke_question.status)[num:num+50]
+                    questions = query1.union(query2).order_by(ke_base.Ke_question.status)[num:num+50]
                 elif order == 'author':
-                    questions = query1.union(query2).order_by(Ke_question.user_id)[num:num+50]
+                    questions = query1.union(query2).order_by(ke_base.Ke_question.user_id)[num:num+50]
                 else:
-                    questions = query1.union(query2).order_by(Ke_question.id.desc())[num:num+50]
+                    questions = query1.union(query2).order_by(ke_base.Ke_question.id.desc())[num:num+50]
             except:
                 questions = []
             tmpl = env.get_template('user.html')

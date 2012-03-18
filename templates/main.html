@@ -1,56 +1,30 @@
 {% include "header.html" %}
 
-{% if ke_data.user.logged_on %}
-    <div class="rounded">
-        <h2>Hola {{ ke_data.user.nick }}!</h2>
-        Tienes <b>{{ ke_data.user.points }}</b> puntos. Los puntos son necesarios para <b>votar las respuestas</b>, y sobre todo,
-        para <b>añadirlos</b> a la <b>recompensa de cada pregunta</b>.<br/>
-        Las preguntas con una recompensa más alta son más visibles, y el usuario que las resuelve obtiene esa recompensa en puntos.
-        {{ ke_data.mainmsg }}
-    </div>
-    
-    <div class="rounded">
-        <h2>
-            Eres miembro de:
-            <span><a class="link" href="/community_list">ver todas las comunidades</a></span>
-        </h2>
-        <div class="d_list">
-            {% for c in ke_data.user.communities %}
-                <div class="element_c" onclick="jump2url('{{ c.get_link() }}')">{{ c.name }} ({{ c.num_users }})</div>
-            {% endfor %}
+<div class="rounded">
+    <h2>
+        Tus últimas preguntas:
+        <span><a class="link" href="{{ ke_data.user.get_link() }}">ver todas mis preguntas</a></span>
+    </h2>
+    <div class="questions">
+    {% for q in ke_data.user.questions[-4:] %}
+        <div class="question_box">
+            <div class="reward">{{ q.reward }}</div>
+            <a class="question" href="{{ q.get_link() }}">
+                <span class="tag">{{ q.get_status() }}</span>
+                <span class="nick">{{ q.user.nick }}</span>
+                <span class="num_answers">{{ q.num_answers }}</span>
+                <span class="date">{{ q.updated|timesince }}</span>
+                <div class="resume">{{ q.get_resume() }}</div>
+            </a>
         </div>
+    {% endfor %}
     </div>
-{% else %}
-    <div class="rounded">
-        <h2>Bienvenido a Kelinux.net</h2>
-        Kelinux.net es una red solical que tiene como misión <b>solucionar todos los problemas que puedas tener con Linux</b>,
-        con <b>cualquier distribución</b>: Ubuntu, Linux Mint, Debian, Fedora, OpenSuSE ... y <b>sin importar cuanto sepas de
-        informática</b>!<br/><br/>
-        En <b>menos de un minuto</b> puedes <a href="/log_in">crear una cuenta</a> y <b>escribir</b> todas las dudas que tengas,
-        nuestro software las clasifica, las muestra a los demás usuarios, especialmente a los que más pueden ayudar sobre ese tema,
-        y así <b>entre todos</b> las podremos <b>solucionar</b>. Además verás en todo momento los cambios y <b>te notificaremos</b>
-        cualquier respuesta.
-        {{ ke_data.mainmsg }}
-    </div>
-    
-    <div class="rounded">
-        <h2>Únete a una comunidad:</h2>
-        <div class="d_list">
-            {% for c in community_list %}
-                <div class="element_c" onclick="jump2url('{{ c.get_link() }}')">{{ c.name }} ({{ c.num_users }})</div>
-            {% endfor %}
-        </div>
-    </div>
-{% endif %}
+</div>
 
 <div class="rounded">
     <h2>
         Una lista de preguntas para ti:
-        {% if ke_data.user.logged_on %}
-            <span><a class="link" href="{{ ke_data.user.get_link() }}">ver todas mis preguntas</a></span>
-        {% endif %}
     </h2>
-    
     <div class="questions">
     {% for q in question_list %}
         <div class="question_box">

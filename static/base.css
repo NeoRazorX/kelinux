@@ -6,14 +6,6 @@ body {
     font-size: 13px;
 }
 
-input, textarea {
-    border: 1px solid #bbbbbb;
-}
-
-textarea {
-    width: 99%;
-}
-
 h1 {
     text-align: center;
     font-variant: small-caps;
@@ -75,19 +67,30 @@ h1:first-letter, h2:first-letter, div.error:first-letter, div.message:first-lett
     text-transform: capitalize;
 }
 
-input[type='submit'], input[type='button'] {
-    text-transform: capitalize;
-    font-variant: small-caps;
+input, textarea {
+    border: 1px solid #333333;
+}
+
+textarea {
+    width: 99%;
+}
+
+input {
     font-size: 15px;
-    font-weight: bold;
     border-top-left-radius: 2px 2px;
     border-top-right-radius: 2px 2px;
     border-bottom-left-radius: 2px 2px;
     border-bottom-right-radius: 2px 2px;
 }
 
+input[type='submit'], input[type='button'] {
+    text-transform: capitalize;
+    font-variant: small-caps;
+    font-weight: bold;
+}
+
 input[type='submit']:hover, input[type='button']:hover {
-    background-color: #4A8BF5;
+    background-color: #333333;
     color: white;
 }
 
@@ -100,6 +103,8 @@ table#header_menu {
     background-color: #3768B8;
     border-bottom: 1px solid #315898;
     color: white;
+    font-size: 15px;
+    font-weight: bold;
 }
 
 table#header_menu td {
@@ -112,7 +117,6 @@ table#header_menu td#logo {
     text-align: center;
     text-transform: capitalize;
     font-variant: small-caps;
-    font-weight: bold;
     width: 150px;
 }
 
@@ -125,27 +129,17 @@ table#header_menu td#logo img {
     border-width: 0px;
 }
 
-table#header_menu td#finder {
-    padding-left: 10px;
-}
-
-table#header_menu td#finder input {
-    border: 1px solid #315898;
-}
-
-table#header_menu td#finder input#b_find {
-    background-color: #333333;
-    border: 1px outset #333333;
-    color: white;
-}
-
 table#header_menu td#stats {
     text-align: right;
-    font-size: 12px;
+    padding-right: 10px;
 }
 
-table#header_menu td#stats span {
-    padding-right: 10px;
+table#header_menu td#stats:hover {
+    cursor: pointer;
+}
+
+table#header_menu a {
+    color: white;
 }
 
 div#left_menu {
@@ -170,7 +164,7 @@ div#left_menu div#d_b_create {
 div#left_menu a#b_create {
     background-color: #D74937;
     color: white;
-    border: 1px solid #AB3C2E;
+    border: 1px solid #333333;
     font-weight: bold;
     font-variant: small-caps;
     font-size: 15px;
@@ -417,12 +411,16 @@ div.answers table.grade {
 }
 
 div.answers table.grade td {
-    color: transparent;
+    display: none;
     font-weight: bold;
+    background-color: #333333;
+    color: white;
 }
 
-div.answers span.grade {
+div.answers table.grade td.grade {
+    display: table-cell;
     font-size: 20px;
+    background-color: inherit;
     color: black;
 }
 
@@ -443,11 +441,13 @@ div.answers table.grade td.mark_solution {
     border-bottom-right-radius: 2px 2px;
 }
 
-div.answers table.grade:hover td.add_grade,
-div.answers table.grade:hover td.minus_grade,
-div.answers table.grade:hover td.mark_solution {
-    background-color: #333333;
-    color: white;
+div.answers div.answer_box:hover table.grade td.add_grade,
+div.answers div.answer_box2:hover table.grade td.add_grade,
+div.answers div.answer_box:hover table.grade td.minus_grade,
+div.answers div.answer_box2:hover table.grade td.minus_grade,
+div.answers div.answer_box:hover table.grade td.mark_solution,
+div.answers div.answer_box2:hover table.grade td.mark_solution {
+    display: table-cell;
 }
 
 div.answers table.grade td.add_grade:hover,
@@ -475,7 +475,7 @@ div.answers div.answer, div.answer_s {
 }
 
 div.answers div.answer_s {
-    border: 3px double #4A8BF5;;
+    border: 3px double #4A8BF5;
 }
 
 span.nick, span.nick_c {
@@ -589,12 +589,6 @@ table#chat_form_table {
 
 table#chat_form_table td#b_send {
     width: 70px;
-}
-
-table#chat_form_table td#b_send input {
-    background-color: #3768B8;
-    color: white;
-    border: 1px outset #3768B8;
 }
 
 table#chat_form_table input#i_chat_text {

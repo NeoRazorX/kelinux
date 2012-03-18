@@ -1,0 +1,132 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="es" lang="es">
+<head>
+    <title>{{ ke_data.title }}</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="keywords" content="{{ ke_data.tags }}" />
+    <meta name="description" content="{{ ke_data.description }}" />
+    <meta name="Robots" content="all" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <link rel="stylesheet" href="/static/new_base.css" type="text/css" />
+    <script type="text/javascript" src="/static/jquery.js"></script>
+    <script type="text/javascript">
+    $(document).ready(function() {
+        document.f_finder.query.focus();
+        $("#b_chat").click(function() {
+            window.location.href = '/chat_room';
+        });
+        $("#b_create").click(function(event) {
+            event.preventDefault();
+            $("#shadow_box").show();
+            $('#popup_create').show();
+            $('#d_create_question').show();
+            $('#popup_create').css({
+                left: ($(window).width() - $('#popup_create').outerWidth())/2,
+                top: ($(window).height() - $('#popup_create').outerHeight())/2
+            });
+            document.f_create_question.text.focus();
+        });
+        $('#popup_create_close').click(function(event) {
+            event.preventDefault();
+            $('#popup_create').hide();
+            $("#shadow_box").hide();
+        });
+        $("#f_create_question").submit(function(event) {
+            event.preventDefault();
+            var texto = 'option=question&text='+document.f_create_question.text.value;
+            texto += '&email='+document.f_create_question.email.value;
+            $.ajax({
+                type: 'POST',
+                url: '/create',
+                dataType: 'html',
+                data: texto,
+                success: function(datos) {
+                    $("#error_create").html(datos);
+                    var jump2link = $("#jump_2_this_link");
+                    if(jump2link.length)
+                        window.location.href = jump2link.attr('href');
+                }
+            });
+        });
+    });
+</script>
+    <script type="text/javascript">
+        var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', '{{ ke_data.analyticsid }}']);
+            _gaq.push(['_trackPageview']);
+        (function() {
+            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+        })();
+    </script>
+</head>
+<body>
+    <table class="header_menu">
+        <tr>
+            <th class="logo"><a href="/"><img src="/img/logo.png" alt="{{ ke_data.appname }}"/></a></th>
+            <th class="form">
+            <form name="f_finder" action="/finder" method="post">
+                <input type="text" name="query" size="30" maxlength="99" value="{{ ke_data.query }}"/>
+                <input id="b_find" type="submit" value="buscar"/>
+            </form>
+            </th>
+            <th class="log_in"><a href="/log_in">iniciar sesión</a></th>
+        </tr>
+    </table>
+    <table class="advices">
+        <tr>
+            <td>
+                <div class="advice">
+                    <h1>¡Bienvenido a {{ ke_data.appname }}!</h1>
+                    {{ ke_data.appname }} es una red solical que tiene como misión <b>solucionar todos los problemas que puedas tener con Linux</b>,
+                    con <b>cualquier distribución</b>: Ubuntu, Linux Mint, Debian, Fedora, OpenSuSE ... y <b>sin importar cuanto sepas de
+                    informática</b>!<br/><br/>
+                    {{ ke_data.mainmsg }}
+                </div>
+            </td>
+            <td>
+                <div class="advice">
+                    <h1>¿Problemas, dudas, preguntas?</h1>
+                    Pulsa el botón crear pregunta, detalla tu problema y escribe tu email. Nuestros usuarios intentarán ayudarte en lo que puedan
+                    y <b>te notificaremos por email cualquier respuesta</b>.
+                    <br/><br/>
+                    <form>
+                        <input type="button" id="b_create" value="crear una pregunta"/>
+                    </form>
+                </div>
+            </td>
+            <td>
+                <div class="advice">
+                    <h1>¿Problemas urgentes?</h1>
+                    Entra en nuestro chat y cuentanos. No te preocupes si no hay nadie, la web informará a cada visitante de que hay gente en el chat.
+                    ¡Espera unos minutos y recibirás ayuda!
+                    <br/><br/>
+                    <form>
+                        <input type="button" id="b_chat" value="entrar en el chat"/>
+                    </form>
+                </div>
+            </td>
+        </tr>
+    </table>
+    
+    <div id="shadow_box"></div>
+    <div id="popup_create" class="popup">
+        <h1>Escribe tu pregunta: <a class="b_close" id="popup_create_close">X</a></h1>
+        <div id="error_create"></div>
+        <div class="d_hidden" id="d_create_question">
+            <form name="f_create_question" id="f_create_question">
+                <textarea rows="10" name="text"></textarea>
+                Email: <input type="text" name="email" size="20"/> (imprescindible).
+                <div class="d_right"><input type="submit" value="crear"/></div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="copyright">
+        <a href="mailto:{{ ke_data.appadminemail }}">Contacto</a> |
+        <a href="https://github.com/NeoRazorX/kelinux">Código fuente</a> |
+        Copyright © 2012 by <a target="_Blank" href="http://www.neorazorx.com/p/cv.html">NeoRazorX</a>
+    </div>
+</body>
+</html>

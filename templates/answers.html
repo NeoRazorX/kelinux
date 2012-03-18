@@ -11,7 +11,7 @@
 <div class="{{ loop.cycle('answer_box', 'answer_box2') }}">
     <table class="grade">
     <tr>
-        <td rowspan="2"><span class="grade" id="answer_grade_{{ a.id }}">{{ a.grade }}</span></td>
+        <td rowspan="2" class="grade" id="answer_grade_{{ a.id }}">{{ a.grade }}</td>
         <td class="add_grade" onclick="vote_answer('{{ a.id }}', true)" title="votar positivamente">+</td>
     </tr>
     <tr>

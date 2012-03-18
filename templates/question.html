@@ -94,6 +94,7 @@
         });
         $("#f_answer").submit(function(event) {
             event.preventDefault();
+            $("#f_answer_submit").attr("disabled", "disabled");
             var texto = 'idq={{ question.id }}&text='+document.f_answer.text.value;
             if( document.f_answer.email )
                 texto += '&email='+document.f_answer.email.value;
@@ -105,6 +106,7 @@
                 success: function(datos) {
                     $("#question_answers").html(datos);
                     document.f_answer.text.value = '';
+                    $("#f_answer_submit").removeAttr("disabled");
                 }
             });
         });
@@ -120,10 +122,7 @@
     <div class="rounded" id="question_info">
         <h2>
             {{ question.get_status() }}
-            <span>
-                creada: {{ question.created|timesince }},
-                modificada: {{ question.updated|timesince }}
-            </span>
+            <span>{{ question.updated|timesince }}</span>
         </h2>
         <div class="reward2">
             <span id="question_reward">{{ question.reward }}</span>
@@ -137,6 +136,7 @@
             {% endfor %}
         </div>
         <div class="long_text">{{ question.text|safe|urlize|linebreaks }}</div>
+        Creada: {{ question.created|timesince }}.
         <div class="d_right">
         {% if ke_data.user.id == question.user.id or ke_data.user.is_admin() %}
             <form><input type="button" name="edit" value="editar" id="edit_question"/></form>
@@ -163,7 +163,7 @@
         {% if not ke_data.user.logged_on %}
             Email: <input type="text" name="email" size="20"/> (necesario).
         {% endif %}
-        <input type="submit" value="enviar"/>
+        <input type="submit" id="f_answer_submit" value="enviar"/>
     </form>
 </div>
 

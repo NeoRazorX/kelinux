@@ -1,0 +1,160 @@
+body {
+    margin: 0px;
+    background-color: #e1e1e1;
+    font-family: Arial, Helvetica, sans-serif;
+    color: black;
+    font-size: 15px;
+}
+
+input {
+    font-size: 15px;
+    font-weight: bold;
+    border: 1px solid #333333;
+    border-top-left-radius: 2px 2px;
+    border-top-right-radius: 2px 2px;
+    border-bottom-left-radius: 2px 2px;
+    border-bottom-right-radius: 2px 2px;
+}
+
+input[type='submit'], input[type='button'] {
+    text-transform: capitalize;
+    font-variant: small-caps;
+}
+
+input[type='button']#b_create {
+    background-color: #D74937;
+    color: white;
+}
+
+input[type='submit']:hover, input[type='button']:hover {
+    background-color: #333333;
+    color: white;
+    cursor: pointer;
+}
+
+textarea {
+    width: 99%;
+}
+
+table.header_menu {
+    width: 100%;
+    padding: 0px;
+    background-color: #3768B8;
+    border-bottom: 1px solid #315898;
+    color: white;
+}
+
+table.header_menu th {
+    height: 40px;
+}
+
+table.header_menu th.logo {
+    font-size: 20px;
+    text-align: center;
+    text-transform: capitalize;
+    font-variant: small-caps;
+    font-weight: bold;
+    width: 150px;
+}
+
+table.header_menu th.form {
+    text-align: left;
+}
+
+table.header_menu th.log_in {
+    text-align: right;
+    padding-right: 5px;
+}
+
+table.header_menu a {
+    color: white;
+}
+
+table.advices {
+    width: 100%;
+}
+
+table.advices td {
+    vertical-align: top;
+    width: 33%;
+}
+
+div.advice {
+    background-color: white;
+    border: 1px solid silver;
+    border-top-left-radius: 5px 5px;
+    border-top-right-radius: 5px 5px;
+    border-bottom-left-radius: 5px 5px;
+    border-bottom-right-radius: 5px 5px;
+    padding: 5px;
+    margin: 5px;
+}
+
+div.advice h1 {
+    margin-top: 0px;
+    font-size: 20px;
+    font-variant: small-caps;
+    border-bottom: 1px dotted silver;
+}
+
+div#shadow_box {
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    opacity: 0.7;
+    display: none;
+}
+
+div.popup {
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    z-index: 3;
+    width: 50%;
+    padding: 5px;
+    background-color: #f1f1f1;
+    border: 3px solid #aaaaaa;
+    border-top-left-radius: 3px 3px;
+    border-top-right-radius: 3px 3px;
+    border-bottom-left-radius: 3px 3px;
+    border-bottom-right-radius: 3px 3px;
+    display: none;
+    overflow: auto;
+}
+
+div.popup h1 {
+    font-size: 18px;
+    text-align: left;
+    color: #222222;
+    margin-top: 0px;
+    margin-bottom: 10px;
+}
+
+a.b_close {
+    float: right;
+    text-decoration: none;
+    font-weight: bold;
+    color: #222222;
+}
+
+a.b_close:hover {
+    cursor: pointer;
+}
+
+div.d_hidden {
+    display: none;
+}
+
+div.d_right {
+    text-align: right;
+    margin: 5px;
+}
+
+div.copyright {
+    margin-top: 20px;
+    text-align: center;
+}
